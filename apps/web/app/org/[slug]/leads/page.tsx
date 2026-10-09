@@ -15,7 +15,9 @@ export default async function LeadsPage({
 
   const { data: leads, error } = await supabase
     .from("leads")
-    .select("id, name, email, phone, notes, status, created_at")
+    .select(
+      "id, name, email, phone, notes, status, created_at, customers!customers_lead_same_organization(id)",
+    )
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false })
 

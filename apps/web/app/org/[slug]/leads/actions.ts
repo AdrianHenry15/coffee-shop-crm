@@ -144,3 +144,51 @@ export async function deleteLead(formData: FormData) {
 
   revalidatePath(`/org/${slug}/leads`)
 }
+
+export async function convertLead(formData: FormData) {
+  const slug = String(formData.get("slug") ?? "")
+  const leadId = String(formData.get("leadId") ?? "")
+
+  const supabase = await createClient()
+
+  const { data: userData, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !userData.user) {
+    redirect("/login")
+  }
+
+  const { data: organization, error: orgError } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("slug", slug)
+    .single()
+
+  if (orgError || !organization) {
+    throw new Error("Organization not found.")
+  }
+
+  // Ensure this lead belongs to the current workspace.
+  const { data: lead, error: leadError } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("id", leadId)
+    .eq("organization_id", organization.id)
+    .single()
+
+  if (leadError || !lead) {
+    throw new Error("Lead not found.")
+  }
+
+  const { error } = await supabase.rpc("convert_lead_to_customer", {
+    lead_uuid: lead.id,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  revalidatePath(`/org/${slug}/leads`)
+  revalidatePath(`/org/${slug}/customers`)
+
+  redirect(`/org/${slug}/customers`)
+}

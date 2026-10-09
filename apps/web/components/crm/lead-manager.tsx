@@ -1,7 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { deleteLead, updateLead } from "@/app/org/[slug]/leads/actions"
+import {
+  deleteLead,
+  updateLead,
+  convertLead,
+} from "@/app/org/[slug]/leads/actions"
 
 type Lead = {
   id: string
@@ -10,6 +14,7 @@ type Lead = {
   phone: string | null
   notes: string | null
   status: string
+  customers: { id: string }[]
 }
 
 type Props = {
@@ -135,6 +140,22 @@ export function LeadManager({ slug, leads }: Props) {
                   </div>
 
                   <div className="flex gap-2">
+                    {lead.customers && (
+                      <span className="text-xs text-green-700">Converted</span>
+                    )}
+                    {lead.status !== "lost" && !lead.customers && (
+                      <form action={convertLead}>
+                        <input type="hidden" name="slug" value={slug} />
+                        <input type="hidden" name="leadId" value={lead.id} />
+
+                        <button
+                          type="submit"
+                          className="rounded-md bg-green-700 px-3 py-2 text-sm text-white">
+                          Convert
+                        </button>
+                      </form>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => setEditing(lead.id)}
