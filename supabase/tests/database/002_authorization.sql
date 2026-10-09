@@ -32,11 +32,9 @@ values
   'member-a@test.local', ''
 );
 
-insert into public.profiles (id, first_name)
-values
-('00000000-0000-4000-8000-000000000011', 'Owner A'),
-('00000000-0000-4000-8000-000000000012', 'Owner B'),
-('00000000-0000-4000-8000-000000000013', 'Member A');
+update public.profiles
+set first_name = 'Test User'
+where id = '00000000-0000-4000-8000-000000000011';
 
 insert into public.organizations (id, name, slug)
 values
