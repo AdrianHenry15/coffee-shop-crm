@@ -1,5 +1,4 @@
 import { getOrganization } from "@/lib/organizations"
-import { logout } from "@/app/auth/actions"
 
 export default async function OrganizationDashboard({
   params,
@@ -10,26 +9,30 @@ export default async function OrganizationDashboard({
   const organization = await getOrganization(slug)
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500">CoffeeShopCRM</p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-semibold">Dashboard</h1>
 
-          <h1 className="text-3xl font-semibold">{organization.name}</h1>
-        </div>
-
-        <form action={logout}>
-          <button type="submit" className="rounded-md border px-4 py-2">
-            Log out
-          </button>
-        </form>
+        <p className="mt-2 text-gray-500">Overview of {organization.name}</p>
       </div>
 
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold">Dashboard</h2>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {["Leads", "Customers", "Estimates", "Jobs"].map((label) => (
+          <div key={label} className="rounded-lg border p-5">
+            <p className="text-sm text-gray-500">{label}</p>
 
-        <p className="mt-2 text-gray-500">Your CRM workspace is ready.</p>
+            <p className="mt-3 text-3xl font-semibold">—</p>
+          </div>
+        ))}
+      </div>
+
+      <section className="rounded-lg border p-6">
+        <h2 className="font-semibold">Recent activity</h2>
+
+        <p className="mt-2 text-sm text-gray-500">
+          Activity will appear here as you use the CRM.
+        </p>
       </section>
-    </main>
+    </div>
   )
 }
