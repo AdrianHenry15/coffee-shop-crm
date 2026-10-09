@@ -118,6 +118,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@coffeeshopcrm/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@supabase/ssr':
         specifier: ^0.12.7
         version: 0.12.7(@supabase/supabase-js@2.116.0)
