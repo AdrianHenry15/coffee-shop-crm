@@ -233,6 +233,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      convert_lead_to_customer: { Args: { lead_uuid: string }; Returns: string }
       create_organization: {
         Args: { org_name: string; org_slug: string }
         Returns: string
