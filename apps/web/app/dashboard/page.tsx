@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { logout } from "@/app/auth/actions"
 import { createClient } from "../lib/supabase/server"
@@ -5,37 +6,51 @@ import { createClient } from "../lib/supabase/server"
 export default async function DashboardPage() {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.auth.getUser()
+  const { data: userData, error: authError } = await supabase.auth.getUser()
 
-  if (error || !data.user) {
+  if (authError || !userData.user) {
     redirect("/login")
   }
 
-  const { data: memberships, error: membershipError } = await supabase
+  const { data: memberships, error } = await supabase
     .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", data.user.id)
+    .select("organization_id, organizations(id, name, slug)")
+    .eq("user_id", userData.user.id)
     .eq("status", "active")
-    .limit(1)
 
-  if (membershipError) {
-    throw new Error("Unable to load organization membership.")
+  if (error) {
+    throw new Error("Unable to load workspaces.")
   }
 
   if (!memberships?.length) {
     redirect("/onboarding")
   }
 
-  return (
-    <main className="mx-auto max-w-4xl p-8">
-      <h1 className="text-3xl font-semibold">CoffeeShopCRM Dashboard</h1>
+  const organizations = memberships.flatMap((membership) =>
+    membership.organizations ? [membership.organizations] : [],
+  )
 
-      <p className="mt-4 text-gray-600">Signed in as {data.user.email}</p>
+  if (organizations.length === 1) {
+    redirect(`/org/${organizations[0].slug}/dashboard`)
+  }
+
+  return (
+    <main className="mx-auto max-w-xl p-8">
+      <h1 className="text-3xl font-semibold">Select a workspace</h1>
+
+      <div className="mt-6 space-y-3">
+        {organizations.map((organization) => (
+          <Link
+            key={organization.id}
+            href={`/org/${organization.slug}/dashboard`}
+            className="block rounded-md border p-4 hover:bg-gray-50">
+            {organization.name}
+          </Link>
+        ))}
+      </div>
 
       <form action={logout} className="mt-8">
-        <button
-          type="submit"
-          className="rounded-md bg-black px-4 py-2 text-white">
+        <button type="submit" className="underline">
           Log out
         </button>
       </form>
