@@ -2,7 +2,7 @@ import Link from "next/link"
 
 export type Activity = {
   id: string
-  type: "lead" | "customer" | "estimate" | "job"
+  type: "lead" | "customer" | "estimate" | "job" | "activity"
   title: string
   description: string
   createdAt: string
@@ -18,6 +18,7 @@ const activityLabels = {
   customer: "Customer Added",
   estimate: "Estimate Created",
   job: "Job Created",
+  activity: "Customer Activity",
 }
 
 export function RecentActivity({ activities }: Props) {
@@ -43,9 +44,7 @@ export function RecentActivity({ activities }: Props) {
               href={activity.href}
               className="flex flex-wrap items-center justify-between gap-3 py-4 transition hover:opacity-70">
               <div className="space-y-1">
-                <p className="text-sm font-medium">
-                  {activityLabels[activity.type]}
-                </p>
+                <p className="text-sm font-medium">{activity.title}</p>
 
                 <p className="text-sm text-gray-500">{activity.description}</p>
               </div>

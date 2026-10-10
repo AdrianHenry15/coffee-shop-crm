@@ -377,28 +377,40 @@ export type Database = {
       }
       organizations: {
         Row: {
+          address: string | null
           created_at: string
+          email: string | null
           id: string
           name: string
+          phone: string | null
           slug: string
           timezone: string
           updated_at: string
+          website: string | null
         }
         Insert: {
+          address?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name: string
+          phone?: string | null
           slug: string
           timezone?: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          address?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
+          phone?: string | null
           slug?: string
           timezone?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }

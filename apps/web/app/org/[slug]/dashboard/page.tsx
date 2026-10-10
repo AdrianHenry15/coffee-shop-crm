@@ -144,42 +144,55 @@ export default async function OrganizationDashboard({
     ]),
   }
 
-  const [recentLeads, recentCustomers, recentEstimates, recentJobs] =
-    await Promise.all([
-      supabase
-        .from("leads")
-        .select("id, name, created_at")
-        .eq("organization_id", organization.id)
-        .order("created_at", { ascending: false })
-        .limit(8),
+  const [
+    recentLeads,
+    recentCustomers,
+    recentEstimates,
+    recentJobs,
+    recentCustomerActivities,
+  ] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("id, name, created_at")
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
 
-      supabase
-        .from("customers")
-        .select("id, name, created_at")
-        .eq("organization_id", organization.id)
-        .order("created_at", { ascending: false })
-        .limit(8),
+    supabase
+      .from("customers")
+      .select("id, name, created_at")
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
 
-      supabase
-        .from("estimates")
-        .select("id, created_at")
-        .eq("organization_id", organization.id)
-        .order("created_at", { ascending: false })
-        .limit(8),
+    supabase
+      .from("estimates")
+      .select("id, created_at")
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
 
-      supabase
-        .from("jobs")
-        .select("id, title, created_at")
-        .eq("organization_id", organization.id)
-        .order("created_at", { ascending: false })
-        .limit(8),
-    ])
+    supabase
+      .from("jobs")
+      .select("id, title, created_at")
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
+
+    supabase
+      .from("customer_activities")
+      .select("id, customer_id, type, content, created_at")
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
+  ])
 
   for (const result of [
     recentLeads,
     recentCustomers,
     recentEstimates,
     recentJobs,
+    recentCustomerActivities,
   ]) {
     if (result.error) {
       throw new Error(result.error.message)
@@ -221,6 +234,20 @@ export default async function OrganizationDashboard({
       description: job.title,
       createdAt: job.created_at,
       href: `/org/${slug}/jobs/${job.id}`,
+    })),
+
+    ...(recentCustomerActivities.data ?? []).map((activity) => ({
+      id: activity.id,
+      type: "activity" as const,
+      title:
+        activity.type === "call"
+          ? "Customer Called"
+          : activity.type === "email"
+            ? "Email Logged"
+            : "Customer Note",
+      description: activity.content,
+      createdAt: activity.created_at,
+      href: `/org/${slug}/customers/${activity.customer_id}`,
     })),
   ]
     .sort(
