@@ -1,6 +1,7 @@
 import { getOrganization } from "@/lib/organizations"
 import { createCustomer } from "./actions"
 import { createClient } from "@/app/lib/supabase/server"
+import { CustomerManager } from "@/app/components/crm/customer-manager"
 
 export default async function CustomersPage({
   params,
@@ -14,7 +15,7 @@ export default async function CustomersPage({
 
   const { data: customers, error } = await supabase
     .from("customers")
-    .select("id, name, email, phone, status, created_at")
+    .select("id, name, email, phone, notes, status, lead_id, created_at")
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false })
 
@@ -79,33 +80,7 @@ export default async function CustomersPage({
           All customers ({customers?.length ?? 0})
         </h2>
 
-        {!customers?.length ? (
-          <p className="rounded-lg border p-5 text-gray-500">
-            No customers yet.
-          </p>
-        ) : (
-          <div className="divide-y rounded-lg border">
-            {customers.map((customer) => (
-              <div
-                key={customer.id}
-                className="flex flex-wrap items-center justify-between gap-4 p-5">
-                <div>
-                  <p className="font-medium">{customer.name}</p>
-
-                  <p className="text-sm text-gray-500">
-                    {customer.email ||
-                      customer.phone ||
-                      "No contact information"}
-                  </p>
-                </div>
-
-                <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-black">
-                  {customer.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        <CustomerManager slug={slug} customers={customers ?? []} />
       </section>
     </div>
   )
