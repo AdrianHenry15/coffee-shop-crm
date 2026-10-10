@@ -367,6 +367,41 @@ export type Database = {
           },
         ]
       }
+      organization_benefits: {
+        Row: {
+          created_at: string
+          maintenance_ends_at: string | null
+          maintenance_starts_at: string | null
+          organization_id: string
+          partner_granted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          maintenance_ends_at?: string | null
+          maintenance_starts_at?: string | null
+          organization_id: string
+          partner_granted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          maintenance_ends_at?: string | null
+          maintenance_starts_at?: string | null
+          organization_id?: string
+          partner_granted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_benefits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -480,6 +515,24 @@ export type Database = {
           timezone?: string
           updated_at?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
         }
         Relationships: []
       }
