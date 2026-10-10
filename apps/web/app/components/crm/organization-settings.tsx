@@ -6,6 +6,7 @@ import { updateOrganizationTimezone } from "@/app/org/[slug]/settings/actions"
 type Props = {
   slug: string
   timezone: string
+  canEdit: boolean
 }
 
 const timezones = [
@@ -18,7 +19,7 @@ const timezones = [
   { value: "Pacific/Honolulu", label: "Hawaii Time" },
 ]
 
-export function OrganizationSettings({ slug, timezone }: Props) {
+export function OrganizationSettings({ slug, timezone, canEdit }: Props) {
   const [selected, setSelected] = useState(timezone)
   const [saved, setSaved] = useState(timezone)
   const [error, setError] = useState("")
@@ -48,6 +49,7 @@ export function OrganizationSettings({ slug, timezone }: Props) {
 
       <select
         value={selected}
+        disabled={!canEdit || pending}
         onChange={(event) => setSelected(event.target.value)}
         className="w-full rounded-md border bg-transparent p-3">
         {timezones.map((option) => (
@@ -62,7 +64,7 @@ export function OrganizationSettings({ slug, timezone }: Props) {
       <button
         type="button"
         onClick={handleSave}
-        disabled={pending || selected === saved}
+        disabled={!canEdit || pending || selected === saved}
         className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
         {pending ? "Saving..." : "Save Changes"}
       </button>
