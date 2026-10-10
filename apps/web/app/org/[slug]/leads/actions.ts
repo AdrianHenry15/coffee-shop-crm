@@ -112,6 +112,10 @@ export async function deleteLead(formData: FormData) {
   const slug = String(formData.get("slug") ?? "")
   const id = String(formData.get("id") ?? "")
 
+  if (!slug || !id) {
+    throw new Error("Missing lead information.")
+  }
+
   const supabase = await createClient()
 
   const { data: userData, error: authError } = await supabase.auth.getUser()
@@ -138,11 +142,17 @@ export async function deleteLead(formData: FormData) {
     .select("id")
     .single()
 
-  if (error || !deleted) {
-    throw new Error("Unable to delete lead.")
+  if (error) {
+    console.error("Error deleting lead:", error)
+    throw new Error(error.message)
+  }
+
+  if (!deleted) {
+    throw new Error("Lead not found or access denied.")
   }
 
   revalidatePath(`/org/${slug}/leads`)
+  revalidatePath(`/org/${slug}/customers`)
 }
 
 export async function convertLead(formData: FormData) {

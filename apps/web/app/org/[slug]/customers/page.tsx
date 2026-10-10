@@ -1,7 +1,7 @@
 import { getOrganization } from "@/lib/organizations"
 import { createCustomer } from "./actions"
 import { createClient } from "@/app/lib/supabase/server"
-import { CustomerManager } from "@/app/components/crm/customer-manager"
+import { CustomerManager } from "@/app/components/crm/managers/customer-manager"
 
 export default async function CustomersPage({
   params,

@@ -1,6 +1,7 @@
 "use client"
 
 import { formatLocalDateTime } from "@/app/lib/dates"
+import { toZonedTime } from "date-fns-tz"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -15,6 +16,7 @@ type Job = {
 
 type Props = {
   slug: string
+  timezone: string
   jobs: Job[]
 }
 
@@ -44,9 +46,18 @@ function formatDate(date: Date) {
   })
 }
 
-export function JobSchedule({ slug, jobs }: Props) {
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()))
+function formatTime(value: string, timezone: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value))
+}
 
+export function JobSchedule({ slug, timezone, jobs }: Props) {
+  const [weekStart, setWeekStart] = useState(() =>
+    startOfWeek(toZonedTime(new Date(), timezone)),
+  )
   function changeWeek(amount: number) {
     setWeekStart((current) => {
       const next = new Date(current)
@@ -85,7 +96,9 @@ export function JobSchedule({ slug, jobs }: Props) {
 
           <button
             type="button"
-            onClick={() => setWeekStart(startOfWeek(new Date()))}
+            onClick={() =>
+              setWeekStart(startOfWeek(toZonedTime(new Date(), timezone)))
+            }
             className="rounded-md border px-4 py-2 text-sm">
             Today
           </button>
@@ -103,8 +116,7 @@ export function JobSchedule({ slug, jobs }: Props) {
         {days.map((day) => {
           const dayJobs = jobs
             .filter((job) => {
-              const date = new Date(job.scheduled_start)
-
+              const date = toZonedTime(job.scheduled_start, timezone)
               return (
                 date.getFullYear() === day.getFullYear() &&
                 date.getMonth() === day.getMonth() &&
@@ -117,8 +129,9 @@ export function JobSchedule({ slug, jobs }: Props) {
                 new Date(b.scheduled_start).getTime(),
             )
 
-          const isToday = day.toDateString() === new Date().toDateString()
-
+          const isToday =
+            day.toDateString() ===
+            toZonedTime(new Date(), timezone).toDateString()
           return (
             <div
               key={day.toISOString()}
@@ -146,7 +159,7 @@ export function JobSchedule({ slug, jobs }: Props) {
                     <p className="text-xs font-semibold">{job.title}</p>
 
                     <p className="text-xs text-gray-500">
-                      {formatLocalDateTime(job.scheduled_start)}
+                      {formatTime(job.scheduled_start, timezone)}
                     </p>
 
                     <p className="truncate text-xs text-gray-500">

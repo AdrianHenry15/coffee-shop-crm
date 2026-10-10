@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { updateEstimateItems } from "@/app/org/[slug]/estimates/actions"
+import type { EstimateStatus } from "./managers/estimate-manager"
 
 type Item = {
   description: string
@@ -13,6 +14,7 @@ type Props = {
   slug: string
   estimateId: string
   initialItems: Item[]
+  status: EstimateStatus
 }
 
 function formatMoney(cents: number) {
@@ -22,11 +24,18 @@ function formatMoney(cents: number) {
   }).format(cents / 100)
 }
 
-export function EstimateItemEditor({ slug, estimateId, initialItems }: Props) {
+export function EstimateItemEditor({
+  slug,
+  estimateId,
+  initialItems,
+  status,
+}: Props) {
   const [items, setItems] = useState<Item[]>(initialItems)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
   const [saved, setSaved] = useState(false)
+
+  const canEdit = status === "draft"
 
   function updateItem(
     index: number,
@@ -85,15 +94,24 @@ export function EstimateItemEditor({ slug, estimateId, initialItems }: Props) {
   return (
     <section className="space-y-5 rounded-lg border p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Edit Services</h2>
+        <h2 className="text-lg font-semibold">
+          {canEdit ? "Edit Services" : "Services"}
+        </h2>
 
-        <button
-          type="button"
-          onClick={addItem}
-          disabled={pending || items.length >= 100}
-          className="rounded-md border px-3 py-2 text-sm">
-          + Add Service
-        </button>
+        {!canEdit && (
+          <p className="text-sm text-gray-500">
+            You can only edit items for draft estimates.
+          </p>
+        )}
+        {canEdit && (
+          <button
+            type="button"
+            onClick={addItem}
+            disabled={pending}
+            className="rounded-md border px-3 py-2 text-sm">
+            + Add Service
+          </button>
+        )}
       </div>
 
       {items.map((item, index) => (
@@ -105,7 +123,7 @@ export function EstimateItemEditor({ slug, estimateId, initialItems }: Props) {
 
             <input
               value={item.description}
-              disabled={pending}
+              disabled={pending || !canEdit}
               maxLength={500}
               onChange={(event) =>
                 updateItem(index, "description", event.target.value)
@@ -122,7 +140,7 @@ export function EstimateItemEditor({ slug, estimateId, initialItems }: Props) {
               min={1}
               step={1}
               value={item.quantity}
-              disabled={pending}
+              disabled={pending || !canEdit}
               onChange={(event) =>
                 updateItem(index, "quantity", Number(event.target.value))
               }
@@ -138,7 +156,7 @@ export function EstimateItemEditor({ slug, estimateId, initialItems }: Props) {
               min={0}
               step="0.01"
               value={item.unitPriceCents / 100}
-              disabled={pending}
+              disabled={pending || !canEdit}
               onChange={(event) =>
                 updateItem(
                   index,
@@ -153,7 +171,7 @@ export function EstimateItemEditor({ slug, estimateId, initialItems }: Props) {
           <div className="flex items-end sm:col-span-2">
             <button
               type="button"
-              disabled={pending || items.length === 1}
+              disabled={pending || !canEdit || items.length === 1}
               onClick={() => removeItem(index)}
               className="w-full rounded-md border px-3 py-2 text-sm text-red-600 disabled:opacity-40">
               Remove
@@ -184,13 +202,15 @@ export function EstimateItemEditor({ slug, estimateId, initialItems }: Props) {
         </p>
       )}
 
-      <button
-        type="button"
-        disabled={pending}
-        onClick={saveItems}
-        className="rounded-md bg-black px-5 py-3 text-white disabled:opacity-50">
-        {pending ? "Saving..." : "Save Changes"}
-      </button>
+      {canEdit && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={saveItems}
+          className="rounded-md bg-black px-5 py-3 text-white disabled:opacity-50">
+          {pending ? "Saving..." : "Save Changes"}
+        </button>
+      )}
     </section>
   )
 }

@@ -74,7 +74,7 @@ export default async function SchedulePage({ params }: Props) {
         </p>
       </div>
 
-      <JobSchedule slug={slug} jobs={jobs} />
+      <JobSchedule slug={slug} jobs={jobs} timezone={organization.timezone} />
     </div>
   )
 }

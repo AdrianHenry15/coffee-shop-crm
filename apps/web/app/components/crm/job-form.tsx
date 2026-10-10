@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { createJob } from "@/app/org/[slug]/jobs/actions"
-import { localToUTC } from "@/app/lib/dates"
+import { localToUTC, organizationTimeToUTC } from "@/app/lib/dates"
 
 type Customer = {
   id: string
@@ -16,11 +16,12 @@ type Estimate = {
 
 type Props = {
   slug: string
+  timezone: string
   customers: Customer[]
   estimates: Estimate[]
 }
 
-export function JobForm({ slug, customers, estimates }: Props) {
+export function JobForm({ slug, timezone, customers, estimates }: Props) {
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? "")
 
   const availableEstimates = estimates.filter(
@@ -32,11 +33,11 @@ export function JobForm({ slug, customers, estimates }: Props) {
     const end = String(formData.get("scheduledEnd") ?? "")
 
     if (start) {
-      formData.set("scheduledStart", localToUTC(start))
+      formData.set("scheduledStart", organizationTimeToUTC(start, timezone))
     }
 
     if (end) {
-      formData.set("scheduledEnd", localToUTC(end))
+      formData.set("scheduledEnd", organizationTimeToUTC(end, timezone))
     }
 
     return createJob(formData)

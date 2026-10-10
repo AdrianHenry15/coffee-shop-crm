@@ -5,7 +5,7 @@ import { createClient } from "@/app/lib/supabase/server"
 import {
   EstimateManager,
   EstimateStatus,
-} from "@/app/components/crm/estimate-manager"
+} from "@/app/components/crm/managers/estimate-manager"
 import { EstimateItemEditor } from "@/app/components/crm/estimate-item-editor"
 
 type Props = {
@@ -139,6 +139,7 @@ export default async function EstimateDetailsPage({ params }: Props) {
 
       {estimate.status === "draft" && (
         <EstimateItemEditor
+          status={estimate.status}
           key={estimate.updated_at}
           slug={slug}
           estimateId={estimate.id}

@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import {
   updateCustomer,
   deleteCustomer,
 } from "@/app/org/[slug]/customers/actions"
+import { ConfirmDialog } from "../ui/confirm-dialog"
 
 type Customer = {
   id: string
@@ -22,8 +24,15 @@ type Props = {
 }
 
 export function CustomerManager({ slug, customers }: Props) {
+  const router = useRouter()
+
   const [search, setSearch] = useState("")
   const [editing, setEditing] = useState<string | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null,
+  )
+  const [deleteError, setDeleteError] = useState("")
+  const [pending, startTransition] = useTransition()
 
   const filtered = customers.filter((customer) => {
     const query = search.toLowerCase()
@@ -34,6 +43,29 @@ export function CustomerManager({ slug, customers }: Props) {
       (customer.phone ?? "").includes(query)
     )
   })
+
+  function removeCustomer() {
+    if (!selectedCustomer) return
+
+    setDeleteError("")
+
+    const formData = new FormData()
+    formData.set("slug", slug)
+    formData.set("id", selectedCustomer.id)
+
+    startTransition(async () => {
+      try {
+        await deleteCustomer(formData)
+
+        setSelectedCustomer(null)
+        router.refresh()
+      } catch (error) {
+        setDeleteError(
+          error instanceof Error ? error.message : "Unable to delete customer.",
+        )
+      }
+    })
+  }
 
   return (
     <div className="space-y-4">
@@ -151,26 +183,16 @@ export function CustomerManager({ slug, customers }: Props) {
                       Edit
                     </button>
 
-                    <form
-                      action={deleteCustomer}
-                      onSubmit={(event) => {
-                        if (
-                          !window.confirm(
-                            `Delete ${customer.name}? This cannot be undone.`,
-                          )
-                        ) {
-                          event.preventDefault()
-                        }
-                      }}>
-                      <input type="hidden" name="slug" value={slug} />
-                      <input type="hidden" name="id" value={customer.id} />
-
-                      <button
-                        type="submit"
-                        className="rounded-md border px-3 py-2 text-sm text-red-600">
-                        Delete
-                      </button>
-                    </form>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => {
+                        setDeleteError("")
+                        setSelectedCustomer(customer)
+                      }}
+                      className="rounded-md border px-3 py-2 text-sm text-red-600 disabled:opacity-50">
+                      Delete
+                    </button>
                   </div>
                 </div>
               )}
@@ -178,6 +200,19 @@ export function CustomerManager({ slug, customers }: Props) {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={selectedCustomer !== null}
+        title={`Delete ${selectedCustomer?.name ?? "Customer"}?`}
+        description="This will permanently delete the customer. This action cannot be undone. Customers with linked estimates or jobs may not be deletable."
+        pending={pending}
+        error={deleteError}
+        onCancel={() => {
+          setSelectedCustomer(null)
+          setDeleteError("")
+        }}
+        onConfirm={removeCustomer}
+      />
     </div>
   )
 }

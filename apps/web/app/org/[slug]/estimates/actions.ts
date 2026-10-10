@@ -171,7 +171,8 @@ export async function deleteEstimate(slug: string, estimateId: string) {
     .eq("organization_id", organization.id)
 
   if (error) {
-    throw new Error("Unable to delete estimate.")
+    console.error("Delete estimate error:", error)
+    throw new Error(error.message)
   }
 
   revalidatePath(`/org/${slug}/estimates`)

@@ -24,6 +24,7 @@ const navigation = [
   { label: "Estimates", path: "estimates" },
   { label: "Jobs", path: "jobs" },
   { label: "Schedule", path: "schedule" },
+  { label: "Settings", path: "settings" },
 ]
 
 export function Sidebar({ currentSlug, organizations }: Props) {

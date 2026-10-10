@@ -6,7 +6,9 @@ import {
   updateJobStatus,
   deleteJob,
 } from "@/app/org/[slug]/jobs/actions"
-import { localToUTC } from "@/app/lib/dates"
+import { organizationTimeToUTC, utcToOrganizationTime } from "@/app/lib/dates"
+import { ConfirmDialog } from "../ui/confirm-dialog"
+import { useRouter } from "next/navigation"
 
 type JobStatus = "scheduled" | "in_progress" | "completed" | "canceled"
 
@@ -21,28 +23,27 @@ type Job = {
 
 type Props = {
   slug: string
+  timezone: string
   job: Job
 }
 
-function toLocalInput(value: string | null) {
-  if (!value) return ""
+export function JobManager({ slug, timezone, job }: Props) {
+  const router = useRouter()
 
-  const date = new Date(value)
-  const offset = date.getTimezoneOffset() * 60000
-
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
-}
-
-export function JobManager({ slug, job }: Props) {
   const [title, setTitle] = useState(job.title)
   const [description, setDescription] = useState(job.description ?? "")
   const [status, setStatus] = useState<JobStatus>(job.status)
-  const [start, setStart] = useState(toLocalInput(job.scheduled_start))
-  const [end, setEnd] = useState(toLocalInput(job.scheduled_end))
+  const [start, setStart] = useState(
+    utcToOrganizationTime(job.scheduled_start, timezone),
+  )
+  const [end, setEnd] = useState(
+    utcToOrganizationTime(job.scheduled_end, timezone),
+  )
 
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
   const [saved, setSaved] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   function saveJob() {
     setError("")
@@ -53,8 +54,8 @@ export function JobManager({ slug, job }: Props) {
         await updateJob(slug, job.id, {
           title,
           description,
-          scheduledStart: localToUTC(start),
-          scheduledEnd: localToUTC(end),
+          scheduledStart: organizationTimeToUTC(start, timezone),
+          scheduledEnd: organizationTimeToUTC(end, timezone),
         })
 
         setSaved(true)
@@ -83,15 +84,14 @@ export function JobManager({ slug, job }: Props) {
   }
 
   function removeJob() {
-    if (!window.confirm("Delete this job permanently?")) {
-      return
-    }
-
     setError("")
 
     startTransition(async () => {
       try {
         await deleteJob(slug, job.id)
+
+        router.push(`/org/${slug}/jobs`)
+        router.refresh()
       } catch (error) {
         setError(
           error instanceof Error ? error.message : "Unable to delete job.",
@@ -193,11 +193,23 @@ export function JobManager({ slug, job }: Props) {
         <button
           type="button"
           disabled={pending}
-          onClick={removeJob}
+          onClick={() => setConfirmDelete(true)}
           className="rounded-md border border-red-500 px-4 py-2 text-sm text-red-600 disabled:opacity-50">
           Delete Job
         </button>
       </div>
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete Job?"
+        description="This will permanently delete the job. Any linked customer or estimate will remain unchanged."
+        pending={pending}
+        error={confirmDelete ? error : ""}
+        onCancel={() => {
+          setConfirmDelete(false)
+          setError("")
+        }}
+        onConfirm={removeJob}
+      />
     </section>
   )
 }

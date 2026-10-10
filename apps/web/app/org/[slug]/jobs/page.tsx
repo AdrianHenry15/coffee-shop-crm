@@ -2,6 +2,7 @@ import Link from "next/link"
 import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
 import { JobForm } from "@/app/components/crm/job-form"
+import { formatOrganizationDateTime } from "@/app/lib/dates"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -134,7 +135,10 @@ export default async function JobsPage({ params }: Props) {
 
                   {job.scheduled_start && (
                     <p className="text-sm text-gray-500">
-                      {new Date(job.scheduled_start).toLocaleString()}
+                      {formatOrganizationDateTime(
+                        job.scheduled_start,
+                        organization.timezone,
+                      )}{" "}
                     </p>
                   )}
                 </div>
@@ -148,7 +152,12 @@ export default async function JobsPage({ params }: Props) {
         )}
       </section>
 
-      <JobForm slug={slug} customers={customers} estimates={estimates} />
+      <JobForm
+        slug={slug}
+        timezone={organization.timezone}
+        customers={customers}
+        estimates={estimates}
+      />
 
       <Link
         href={`/org/${slug}/customers`}

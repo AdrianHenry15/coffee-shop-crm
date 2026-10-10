@@ -12,7 +12,7 @@ export async function getOrganization(slug: string) {
 
   const { data: organization, error } = await supabase
     .from("organizations")
-    .select("id, name, slug")
+    .select("id, name, slug, timezone")
     .eq("slug", slug)
     .single()
 

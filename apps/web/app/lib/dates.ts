@@ -44,3 +44,59 @@ export function formatLocalDateTime(value: string): string {
     timeStyle: "short",
   })
 }
+
+import { fromZonedTime, toZonedTime } from "date-fns-tz"
+
+/**
+ * Convert an organization's local date/time into UTC.
+ *
+ * Example:
+ * "2026-10-20T09:00" in America/New_York
+ * becomes the corresponding UTC timestamp.
+ */
+export function organizationTimeToUTC(value: string, timezone: string): string {
+  if (!value) return ""
+
+  const date = fromZonedTime(value, timezone)
+
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Invalid date.")
+  }
+
+  return date.toISOString()
+}
+
+/**
+ * Convert a UTC timestamp into an organization's local
+ * datetime-local input value.
+ */
+export function utcToOrganizationTime(
+  value: string | null,
+  timezone: string,
+): string {
+  if (!value) return ""
+
+  const date = toZonedTime(value, timezone)
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  const hour = String(date.getHours()).padStart(2, "0")
+  const minute = String(date.getMinutes()).padStart(2, "0")
+
+  return `${year}-${month}-${day}T${hour}:${minute}`
+}
+
+/**
+ * Format a UTC timestamp for the organization's timezone.
+ */
+export function formatOrganizationDateTime(
+  value: string,
+  timezone: string,
+): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value))
+}

@@ -134,8 +134,13 @@ export async function deleteCustomer(formData: FormData) {
     .select("id")
     .single()
 
-  if (error || !deleted) {
-    throw new Error("Unable to delete customer.")
+  if (error) {
+    console.error("Error deleting customer:", error)
+    throw new Error(error.message)
+  }
+
+  if (!deleted) {
+    throw new Error("Customer not found or access denied.")
   }
 
   revalidatePath(`/org/${slug}/customers`)

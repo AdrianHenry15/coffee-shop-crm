@@ -114,7 +114,7 @@ values
   '00000000-0000-4000-8000-000000001033',
   '00000000-0000-4000-8000-000000001011',
   '00000000-0000-4000-8000-000000001021',
-  'sent'
+  'draft'
 );
 
 insert into public.estimate_items (
@@ -188,6 +188,10 @@ select is(
   'Organization B Item',
   'Cross-organization update did not modify data'
 );
+
+update public.estimates
+set status = 'sent'
+where id = '00000000-0000-4000-8000-000000001033';
 
 -- Return to User A.
 set local role authenticated;

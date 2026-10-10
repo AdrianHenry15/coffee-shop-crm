@@ -1,7 +1,7 @@
 import { getOrganization } from "@/lib/organizations"
 import { createLead } from "./actions"
 import { createClient } from "@/app/lib/supabase/server"
-import { LeadManager } from "@/components/crm/lead-manager"
+import { LeadManager } from "@/app/components/crm/managers/lead-manager"
 
 export default async function LeadsPage({
   params,
@@ -15,15 +15,36 @@ export default async function LeadsPage({
 
   const { data: leads, error } = await supabase
     .from("leads")
-    .select(
-      "id, name, email, phone, notes, status, created_at, customers!customers_lead_same_organization(id)",
-    )
+    .select("id, name, email, phone, notes, status, created_at")
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false })
 
   if (error) {
-    throw new Error("Unable to load leads.")
+    throw new Error(error.message)
   }
+
+  const { data: customers, error: customersError } = await supabase
+    .from("customers")
+    .select("id, lead_id")
+    .eq("organization_id", organization.id)
+    .not("lead_id", "is", null)
+
+  if (customersError) {
+    throw new Error(customersError.message)
+  }
+
+  const customerByLeadId = new Map(
+    (customers ?? []).map((customer) => [customer.lead_id, customer.id]),
+  )
+
+  const leadsWithCustomers = (leads ?? []).map((lead) => {
+    const customerId = customerByLeadId.get(lead.id)
+
+    return {
+      ...lead,
+      customers: customerId ? [{ id: customerId }] : [],
+    }
+  })
 
   return (
     <div className="space-y-8">
@@ -81,8 +102,7 @@ export default async function LeadsPage({
         <h2 className="text-lg font-semibold">
           All leads ({leads?.length ?? 0})
         </h2>
-
-        <LeadManager slug={slug} leads={leads ?? []} />
+        <LeadManager slug={slug} leads={leadsWithCustomers} />
       </section>
     </div>
   )

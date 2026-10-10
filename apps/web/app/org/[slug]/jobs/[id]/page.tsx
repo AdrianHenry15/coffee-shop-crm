@@ -2,7 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
-import { JobManager } from "@/app/components/crm/job-manager"
+import { JobManager } from "@/app/components/crm/managers/job-manager"
 
 type Props = {
   params: Promise<{
@@ -96,6 +96,7 @@ export default async function JobDetailsPage({ params }: Props) {
       <JobManager
         key={job.updated_at}
         slug={slug}
+        timezone={organization.timezone}
         job={{
           id: job.id,
           title: job.title,
