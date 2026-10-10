@@ -68,33 +68,70 @@ export default async function CustomerDetailsPage({ params }: Props) {
   const jobs = jobsResult.data ?? []
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 p-6">
-      <Link href={`/org/${slug}/customers`} className="text-sm underline">
-        ← Back to Customers
+    <div className="mx-auto max-w-5xl space-y-8">
+      <Link
+        href={`/org/${slug}/customers`}
+        className="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-primary">
+        ← Back to customers
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold">{customer.name}</h1>
-
-        <p className="mt-1 text-sm capitalize text-gray-500">
-          {customer.status}
+      <header className="space-y-3">
+        <p className="font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Customer management / Details
         </p>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+            {customer.name}
+          </h1>
+
+          <span className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-medium capitalize text-primary">
+            {customer.status}
+          </span>
+        </div>
+
+        <p className="text-sm text-muted">
+          Customer profile, interactions, estimates, and jobs.
+        </p>
+      </header>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <section className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-5 font-mono text-lg font-semibold text-foreground">
+            Contact information
+          </h2>
+
+          <div className="space-y-5">
+            <div>
+              <p className="mb-1 font-mono text-xs uppercase tracking-wide text-muted">
+                Email
+              </p>
+              <p className="wrap-break-word text-sm text-foreground">
+                {customer.email || "Not provided"}
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-1 font-mono text-xs uppercase tracking-wide text-muted">
+                Phone
+              </p>
+              <p className="text-sm text-foreground">
+                {customer.phone || "Not provided"}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-5 font-mono text-lg font-semibold text-foreground">
+            Customer notes
+          </h2>
+
+          <p className="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-muted">
+            {customer.notes || "No notes added."}
+          </p>
+        </section>
       </div>
-
-      <section className="space-y-3 rounded-lg border p-5">
-        <h2 className="text-lg font-semibold">Contact Information</h2>
-
-        <p>Email: {customer.email || "Not provided"}</p>
-        <p>Phone: {customer.phone || "Not provided"}</p>
-      </section>
-
-      <section className="space-y-3 rounded-lg border p-5">
-        <h2 className="text-lg font-semibold">Customer Notes</h2>
-
-        <p className="whitespace-pre-wrap text-sm text-gray-600">
-          {customer.notes || "No notes added."}
-        </p>
-      </section>
 
       <CustomerActivity
         slug={slug}
@@ -103,53 +140,77 @@ export default async function CustomerDetailsPage({ params }: Props) {
         activities={activities}
       />
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">
-          Estimates ({estimates.length})
-        </h2>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Estimates
+            </h2>
 
-        {estimates.length === 0 ? (
-          <p className="text-sm text-gray-500">No estimates yet.</p>
-        ) : (
-          <div className="divide-y rounded-lg border">
-            {estimates.map((estimate) => (
-              <Link
-                key={estimate.id}
-                href={`/org/${slug}/estimates/${estimate.id}`}
-                className="flex justify-between gap-4 p-4 hover:bg-gray-50">
-                <span>Estimate {estimate.id.slice(0, 8)}</span>
-
-                <span className="text-sm capitalize text-gray-500">
-                  {estimate.status}
-                </span>
-              </Link>
-            ))}
+            <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs text-muted">
+              {estimates.length} total
+            </span>
           </div>
-        )}
-      </section>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Jobs ({jobs.length})</h2>
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+            {estimates.length === 0 ? (
+              <p className="p-6 text-sm text-muted">No estimates yet.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {estimates.map((estimate) => (
+                  <Link
+                    key={estimate.id}
+                    href={`/org/${slug}/estimates/${estimate.id}`}
+                    className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-surface-secondary">
+                    <span className="font-mono text-sm font-medium text-foreground">
+                      Estimate {estimate.id.slice(0, 8)}
+                    </span>
 
-        {jobs.length === 0 ? (
-          <p className="text-sm text-gray-500">No jobs yet.</p>
-        ) : (
-          <div className="divide-y rounded-lg border">
-            {jobs.map((job) => (
-              <Link
-                key={job.id}
-                href={`/org/${slug}/jobs/${job.id}`}
-                className="flex justify-between gap-4 p-4 hover:bg-gray-50">
-                <span>{job.title}</span>
-
-                <span className="text-sm capitalize text-gray-500">
-                  {job.status.replaceAll("_", " ")}
-                </span>
-              </Link>
-            ))}
+                    <span className="text-xs capitalize text-muted">
+                      {estimate.status.replaceAll("_", " ")}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </section>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Jobs
+            </h2>
+
+            <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs text-muted">
+              {jobs.length} total
+            </span>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+            {jobs.length === 0 ? (
+              <p className="p-6 text-sm text-muted">No jobs yet.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {jobs.map((job) => (
+                  <Link
+                    key={job.id}
+                    href={`/org/${slug}/jobs/${job.id}`}
+                    className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-surface-secondary">
+                    <span className="text-sm font-medium text-foreground">
+                      {job.title}
+                    </span>
+
+                    <span className="text-xs capitalize text-muted">
+                      {job.status.replaceAll("_", " ")}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   )
 }

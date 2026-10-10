@@ -16,6 +16,9 @@ const initialState: CreateLeadState = {
   message: "",
 }
 
+const inputClassName =
+  "w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15"
+
 export function LeadForm({ slug }: Props) {
   const [state, formAction] = useActionState(createLead, initialState)
   const formRef = useRef<HTMLFormElement>(null)
@@ -27,53 +30,88 @@ export function LeadForm({ slug }: Props) {
   }, [state])
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="space-y-5">
       <input type="hidden" name="slug" value={slug} />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <input
-          name="name"
-          required
-          maxLength={200}
-          placeholder="Name"
-          className="rounded-md border p-3"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="lead-name"
+            className="block text-sm font-medium text-foreground">
+            Name <span className="text-primary">*</span>
+          </label>
+          <input
+            id="lead-name"
+            name="name"
+            required
+            maxLength={200}
+            placeholder="Full name"
+            className={inputClassName}
+          />
+        </div>
 
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          className="rounded-md border p-3"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="lead-email"
+            className="block text-sm font-medium text-foreground">
+            Email
+          </label>
+          <input
+            id="lead-email"
+            name="email"
+            type="email"
+            placeholder="name@example.com"
+            className={inputClassName}
+          />
+        </div>
 
-        <input
-          name="phone"
-          placeholder="Phone"
-          className="rounded-md border p-3"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="lead-phone"
+            className="block text-sm font-medium text-foreground">
+            Phone
+          </label>
+          <input
+            id="lead-phone"
+            name="phone"
+            type="tel"
+            placeholder="Phone number"
+            className={inputClassName}
+          />
+        </div>
 
-        <input
-          name="notes"
-          placeholder="Notes"
-          className="rounded-md border p-3"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="lead-notes"
+            className="block text-sm font-medium text-foreground">
+            Notes
+          </label>
+          <input
+            id="lead-notes"
+            name="notes"
+            placeholder="Additional details"
+            className={inputClassName}
+          />
+        </div>
       </div>
 
       {state.message && (
         <p
           role="status"
-          className={
-            state.success ? "text-sm text-green-600" : "text-sm text-red-600"
-          }>
+          className={`text-sm ${
+            state.success ? "text-primary" : "text-red-500"
+          }`}>
           {state.message}
         </p>
       )}
 
-      <SubmitButton
-        pendingLabel="Creating lead..."
-        className="rounded-md bg-black px-5 py-3 text-white">
-        Create lead
-      </SubmitButton>
+      <div className="flex justify-end border-t border-border pt-5">
+        <SubmitButton
+          pendingLabel="Creating lead..."
+          className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
+          Create lead
+        </SubmitButton>
+      </div>
     </form>
   )
 }

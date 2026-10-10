@@ -26,6 +26,22 @@ type Props = {
 
 const statuses = ["new", "contacted", "qualified", "lost"]
 
+const inputClass =
+  "w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
+
+const secondaryButton =
+  "rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary disabled:opacity-50"
+
+const primaryButton =
+  "rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+
+const statusStyles: Record<string, string> = {
+  new: "bg-blue-500/10 text-blue-500",
+  contacted: "bg-amber-500/10 text-amber-500",
+  qualified: "bg-emerald-500/10 text-emerald-500",
+  lost: "bg-red-500/10 text-red-500",
+}
+
 export function LeadManager({ slug, leads }: Props) {
   const router = useRouter()
 
@@ -88,65 +104,83 @@ export function LeadManager({ slug, leads }: Props) {
 
   return (
     <div className="space-y-4">
-      <input
-        type="search"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder="Search leads..."
-        className="w-full rounded-md border p-3"
-      />
+      <div className="rounded-xl border border-border bg-surface p-4">
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search by name, email, or phone..."
+          aria-label="Search leads"
+          className={inputClass}
+        />
+        <p className="mt-2 font-mono text-xs text-muted">
+          Showing {filtered.length} of {leads.length} leads
+        </p>
+      </div>
 
       {!filtered.length ? (
-        <p className="rounded-md border p-5 text-gray-500">
-          No matching leads found.
-        </p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <p className="font-mono text-sm font-medium text-foreground">
+            {search.trim() ? "No matching leads" : "No leads yet"}
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            {search.trim()
+              ? "Try searching for a different name, email, or phone."
+              : "Add your first lead using the form above."}
+          </p>
+        </div>
       ) : (
-        <div className="divide-y rounded-lg border">
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
           {filtered.map((lead) => {
             const isConverted = (lead.customers?.length ?? 0) > 0
 
             return (
               <div key={lead.id} className="p-5">
                 {editing === lead.id ? (
-                  <form action={saveLead} className="space-y-3">
+                  <form action={saveLead} className="space-y-4">
                     <input type="hidden" name="slug" value={slug} />
                     <input type="hidden" name="id" value={lead.id} />
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       <input
                         name="name"
+                        aria-label="Lead name"
                         defaultValue={lead.name}
                         required
                         maxLength={200}
                         disabled={saving}
-                        className="rounded-md border p-3"
+                        className={inputClass}
                       />
 
                       <input
                         name="email"
                         type="email"
+                        aria-label="Lead email"
                         defaultValue={lead.email ?? ""}
                         placeholder="Email"
                         disabled={saving}
-                        className="rounded-md border p-3"
+                        className={inputClass}
                       />
 
                       <input
                         name="phone"
+                        type="tel"
+                        aria-label="Lead phone"
                         defaultValue={lead.phone ?? ""}
                         placeholder="Phone"
                         disabled={saving}
-                        className="rounded-md border p-3"
+                        className={inputClass}
                       />
 
                       <select
                         name="status"
+                        aria-label="Lead status"
                         defaultValue={lead.status}
                         disabled={saving}
-                        className="rounded-md border p-3">
+                        className={inputClass}>
                         {statuses.map((status) => (
                           <option key={status} value={status}>
-                            {status}
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
                           </option>
                         ))}
                       </select>
@@ -154,25 +188,26 @@ export function LeadManager({ slug, leads }: Props) {
 
                     <textarea
                       name="notes"
+                      aria-label="Lead notes"
                       defaultValue={lead.notes ?? ""}
                       placeholder="Notes"
                       rows={3}
                       disabled={saving}
-                      className="w-full rounded-md border p-3"
+                      className={inputClass}
                     />
 
                     {editError && (
-                      <p role="alert" className="text-sm text-red-600">
+                      <p role="alert" className="text-sm text-red-500">
                         {editError}
                       </p>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         type="submit"
                         disabled={saving}
-                        className="rounded-md bg-black px-4 py-2 text-white disabled:opacity-50">
-                        {saving ? "Saving..." : "Save"}
+                        className={primaryButton}>
+                        {saving ? "Saving..." : "Save changes"}
                       </button>
 
                       <button
@@ -182,32 +217,39 @@ export function LeadManager({ slug, leads }: Props) {
                           setEditing(null)
                           setEditError("")
                         }}
-                        className="rounded-md border px-4 py-2 disabled:opacity-50">
+                        className={secondaryButton}>
                         Cancel
                       </button>
                     </div>
                   </form>
                 ) : (
                   <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="space-y-2">
-                      <p className="font-medium">{lead.name}</p>
+                    <div className="min-w-0 space-y-2">
+                      <p className="font-medium text-foreground">{lead.name}</p>
 
-                      <p className="text-sm text-gray-500">
+                      <p className="wrap-break-word text-sm text-muted">
                         {lead.email || lead.phone || "No contact information"}
                       </p>
 
-                      <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs text-black">
-                        {lead.status}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 font-mono text-xs font-medium ${
+                            statusStyles[lead.status] ??
+                            "bg-surface-secondary text-foreground"
+                          }`}>
+                          {lead.status.charAt(0).toUpperCase() +
+                            lead.status.slice(1)}
+                        </span>
+
+                        {isConverted && (
+                          <span className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-medium text-primary">
+                            Converted
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      {isConverted && (
-                        <span className="text-xs text-green-700">
-                          Converted
-                        </span>
-                      )}
-
                       {!isConverted && lead.status !== "lost" && (
                         <form action={convertLead}>
                           <input type="hidden" name="slug" value={slug} />
@@ -216,7 +258,7 @@ export function LeadManager({ slug, leads }: Props) {
                           <button
                             type="submit"
                             disabled={pending || saving}
-                            className="rounded-md bg-green-700 px-3 py-2 text-sm text-white disabled:opacity-50">
+                            className={primaryButton}>
                             Convert
                           </button>
                         </form>
@@ -229,7 +271,7 @@ export function LeadManager({ slug, leads }: Props) {
                           setEditError("")
                           setEditing(lead.id)
                         }}
-                        className="rounded-md border px-3 py-2 text-sm disabled:opacity-50">
+                        className={secondaryButton}>
                         Edit
                       </button>
 
@@ -240,7 +282,7 @@ export function LeadManager({ slug, leads }: Props) {
                           setSelectedLead(lead)
                           setDeleteError("")
                         }}
-                        className="rounded-md border px-3 py-2 text-sm text-red-600 disabled:opacity-50">
+                        className="rounded-lg border border-red-500/20 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50">
                         Delete
                       </button>
                     </div>

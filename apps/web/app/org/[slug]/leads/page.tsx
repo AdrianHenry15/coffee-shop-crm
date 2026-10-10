@@ -1,8 +1,6 @@
 import { getOrganization } from "@/lib/organizations"
-import { createLead } from "./actions"
 import { createClient } from "@/app/lib/supabase/server"
 import { LeadManager } from "@/app/components/crm/managers/lead-manager"
-import { SubmitButton } from "@/app/components/crm/ui/submit-button"
 import { LeadForm } from "@/app/components/crm/forms/lead-form"
 
 export default async function LeadsPage({
@@ -50,23 +48,51 @@ export default async function LeadsPage({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold">Leads</h1>
-        <p className="mt-2 text-gray-500">
+      <header>
+        <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Customer management
+        </p>
+
+        <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+          Leads
+        </h1>
+
+        <p className="mt-2 text-sm text-muted">
           Manage potential customers for {organization.name}.
         </p>
-      </div>
+      </header>
 
-      <section className="rounded-lg border p-5">
-        <h2 className="mb-4 text-lg font-semibold">Add lead</h2>
+      <section className="rounded-xl border border-border bg-surface p-6">
+        <div className="mb-6">
+          <h2 className="font-mono text-lg font-semibold text-foreground">
+            Add lead
+          </h2>
+
+          <p className="mt-1 text-sm text-muted">
+            Capture a new opportunity for your business.
+          </p>
+        </div>
 
         <LeadForm slug={slug} />
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">
-          All leads ({leads?.length ?? 0})
-        </h2>
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              All leads
+            </h2>
+
+            <p className="mt-1 text-sm text-muted">
+              Track and manage your incoming opportunities.
+            </p>
+          </div>
+
+          <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
+            {leadsWithCustomers.length} total
+          </span>
+        </div>
+
         <LeadManager slug={slug} leads={leadsWithCustomers} />
       </section>
     </div>

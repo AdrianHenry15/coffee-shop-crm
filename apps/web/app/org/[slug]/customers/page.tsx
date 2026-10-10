@@ -25,22 +25,50 @@ export default async function CustomersPage({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold">Customers</h1>
-        <p className="mt-2 text-gray-500">
+      <header>
+        <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Customer management
+        </p>
+
+        <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+          Customers
+        </h1>
+
+        <p className="mt-2 text-sm text-muted">
           Manage customers for {organization.name}.
         </p>
-      </div>
+      </header>
 
-      <section className="rounded-lg border p-5">
-        <h2 className="mb-4 text-lg font-semibold">Add Customer</h2>
+      <section className="rounded-xl border border-border bg-surface p-6">
+        <div className="mb-6">
+          <h2 className="font-mono text-lg font-semibold text-foreground">
+            Add customer
+          </h2>
+
+          <p className="mt-1 text-sm text-muted">
+            Add a customer to your business directory.
+          </p>
+        </div>
+
         <CustomerForm slug={slug} />
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">
-          All customers ({customers?.length ?? 0})
-        </h2>
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              All customers
+            </h2>
+
+            <p className="mt-1 text-sm text-muted">
+              View and manage your customer relationships.
+            </p>
+          </div>
+
+          <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
+            {customers?.length ?? 0} total
+          </span>
+        </div>
 
         <CustomerManager slug={slug} customers={customers ?? []} />
       </section>

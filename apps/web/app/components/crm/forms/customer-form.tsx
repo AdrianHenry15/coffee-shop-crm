@@ -16,9 +16,11 @@ const initialState: CreateCustomerState = {
   message: "",
 }
 
+const inputClass =
+  "w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15"
+
 export function CustomerForm({ slug }: Props) {
   const [state, formAction] = useActionState(createCustomer, initialState)
-
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
@@ -28,53 +30,88 @@ export function CustomerForm({ slug }: Props) {
   }, [state])
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="space-y-5">
       <input type="hidden" name="slug" value={slug} />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <input
-          name="name"
-          required
-          maxLength={200}
-          placeholder="Name"
-          className="rounded-md border p-3"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="customer-name"
+            className="block text-sm font-medium text-foreground">
+            Name <span className="text-primary">*</span>
+          </label>
+          <input
+            id="customer-name"
+            name="name"
+            required
+            maxLength={200}
+            placeholder="Full name"
+            className={inputClass}
+          />
+        </div>
 
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          className="rounded-md border p-3"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="customer-email"
+            className="block text-sm font-medium text-foreground">
+            Email
+          </label>
+          <input
+            id="customer-email"
+            name="email"
+            type="email"
+            placeholder="name@example.com"
+            className={inputClass}
+          />
+        </div>
 
-        <input
-          name="phone"
-          placeholder="Phone"
-          className="rounded-md border p-3"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="customer-phone"
+            className="block text-sm font-medium text-foreground">
+            Phone
+          </label>
+          <input
+            id="customer-phone"
+            name="phone"
+            type="tel"
+            placeholder="Phone number"
+            className={inputClass}
+          />
+        </div>
 
-        <input
-          name="notes"
-          placeholder="Notes"
-          className="rounded-md border p-3"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="customer-notes"
+            className="block text-sm font-medium text-foreground">
+            Notes
+          </label>
+          <input
+            id="customer-notes"
+            name="notes"
+            placeholder="Additional details"
+            className={inputClass}
+          />
+        </div>
       </div>
 
       {state.message && (
         <p
           role="status"
-          className={
-            state.success ? "text-sm text-green-600" : "text-sm text-red-600"
-          }>
+          className={`text-sm ${
+            state.success ? "text-primary" : "text-red-500"
+          }`}>
           {state.message}
         </p>
       )}
 
-      <SubmitButton
-        pendingLabel="Creating customer..."
-        className="rounded-md bg-black px-5 py-3 text-white">
-        Create customer
-      </SubmitButton>
+      <div className="flex justify-end border-t border-border pt-5">
+        <SubmitButton
+          pendingLabel="Creating customer..."
+          className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
+          Create customer
+        </SubmitButton>
+      </div>
     </form>
   )
 }
