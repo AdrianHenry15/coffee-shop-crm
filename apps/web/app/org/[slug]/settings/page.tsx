@@ -3,6 +3,7 @@ import { createClient } from "@/app/lib/supabase/server"
 import { OrganizationSettings } from "@/app/components/crm/organization-settings"
 import { OrganizationProfile } from "@/app/components/crm/organization-profile"
 import { OrganizationMembers } from "@/app/components/crm/organization-members"
+import { OrganizationSubscription } from "@/app/components/crm/organization-subscription"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -12,6 +13,15 @@ export default async function SettingsPage({ params }: Props) {
   const { slug } = await params
   const organization = await getOrganization(slug)
   const supabase = await createClient()
+
+  const { data: subscriptionUsage, error: subscriptionError } =
+    await supabase.rpc("get_organization_subscription_usage", {
+      org_uuid: organization.id,
+    })
+
+  if (subscriptionError) {
+    throw new Error("Unable to load subscription usage")
+  }
 
   const {
     data: { user },
@@ -32,24 +42,13 @@ export default async function SettingsPage({ params }: Props) {
 
   const { data: members, error: membersError } = await supabase
     .from("organization_members")
-    .select(
-      `
-  id,
-  user_id,
-  role,
-  status,
-  profiles (
-    first_name,
-    last_name,
-    avatar_url
-  )
-`,
-    )
+    .select("id, user_id, role, status")
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: true })
 
   if (membersError) {
-    throw new Error("Unable to load organization members")
+    console.error("Organization members query failed:", membersError)
+    throw new Error(membersError.message)
   }
 
   const memberIds = (members ?? []).map((member) => member.user_id)
@@ -98,6 +97,8 @@ export default async function SettingsPage({ params }: Props) {
         slug={slug}
         timezone={organization.timezone}
       />
+
+      <OrganizationSubscription usage={subscriptionUsage ?? []} />
 
       <OrganizationMembers
         members={membersWithProfiles}
