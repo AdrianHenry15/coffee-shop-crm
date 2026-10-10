@@ -181,6 +181,73 @@ export type Database = {
           },
         ]
       }
+      jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          customer_id: string
+          description: string | null
+          estimate_id: string | null
+          id: string
+          organization_id: string
+          scheduled_end: string | null
+          scheduled_start: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          estimate_id?: string | null
+          id?: string
+          organization_id: string
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          estimate_id?: string | null
+          id?: string
+          organization_id?: string
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_customer_same_organization"
+            columns: ["customer_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "jobs_estimate_same_organization"
+            columns: ["estimate_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           created_at: string
@@ -320,9 +387,26 @@ export type Database = {
     }
     Functions: {
       convert_lead_to_customer: { Args: { lead_uuid: string }; Returns: string }
+      create_estimate: {
+        Args: {
+          p_customer_id: string
+          p_items: Json
+          p_notes: string
+          p_organization_id: string
+        }
+        Returns: string
+      }
       create_organization: {
         Args: { org_name: string; org_slug: string }
         Returns: string
+      }
+      update_estimate_items: {
+        Args: {
+          p_estimate_id: string
+          p_items: Json
+          p_organization_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
