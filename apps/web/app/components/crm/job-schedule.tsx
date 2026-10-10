@@ -82,22 +82,33 @@ export function JobSchedule({ slug, timezone, jobs }: Props) {
   const weekEnd = days[6]
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold">
-          {formatDate(weekStart)} –{" "}
-          {weekEnd.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </h2>
+        <div>
+          <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
+            Weekly schedule
+          </p>
 
-        <div className="flex gap-2">
+          <h2 className="font-mono text-xl font-semibold text-foreground">
+            {formatDate(weekStart)} –{" "}
+            {weekEnd.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </h2>
+
+          <p className="mt-1 text-sm text-muted">
+            View and manage scheduled customer jobs.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => changeWeek(-1)}
-            className="rounded-md border px-4 py-2">
+            aria-label="Previous week"
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary">
             ←
           </button>
 
@@ -106,78 +117,107 @@ export function JobSchedule({ slug, timezone, jobs }: Props) {
             onClick={() =>
               setWeekStart(startOfWeek(toZonedTime(new Date(), timezone)))
             }
-            className="rounded-md border px-4 py-2 text-sm">
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary">
             Today
           </button>
 
           <button
             type="button"
             onClick={() => changeWeek(1)}
-            className="rounded-md border px-4 py-2">
+            aria-label="Next week"
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary">
             →
           </button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-7">
-        {days.map((day) => {
-          const dayJobs = jobs
-            .filter((job) => {
-              const date = toZonedTime(job.scheduled_start, timezone)
-              return getDateKey(date) === getDateKey(day)
-            })
-            .sort(
-              (a, b) =>
-                new Date(a.scheduled_start).getTime() -
-                new Date(b.scheduled_start).getTime(),
-            )
+      <div className="overflow-x-auto pb-2">
+        <div className="grid min-w-[770px] grid-cols-7 gap-3">
+          {days.map((day) => {
+            const dayJobs = jobs
+              .filter((job) => {
+                const date = toZonedTime(job.scheduled_start, timezone)
 
-          const isToday =
-            day.toDateString() ===
-            toZonedTime(new Date(), timezone).toDateString()
-          return (
-            <div
-              key={getDateKey(day)}
-              className={`min-h-44 space-y-3 rounded-lg border p-3 ${
-                isToday ? "border-black" : ""
-              }`}>
-              <div className="border-b pb-2">
-                <p className="text-xs text-gray-500">
-                  {day.toLocaleDateString("en-US", {
-                    weekday: "short",
-                  })}
-                </p>
+                return getDateKey(date) === getDateKey(day)
+              })
+              .sort(
+                (a, b) =>
+                  new Date(a.scheduled_start).getTime() -
+                  new Date(b.scheduled_start).getTime(),
+              )
 
-                <p className="font-semibold">{day.getDate()}</p>
+            const isToday =
+              day.toDateString() ===
+              toZonedTime(new Date(), timezone).toDateString()
+
+            return (
+              <div
+                key={getDateKey(day)}
+                className={`min-h-56 space-y-3 rounded-xl border p-3 ${
+                  isToday
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-surface"
+                }`}>
+                <div className="border-b border-border pb-3">
+                  <p
+                    className={`font-mono text-xs font-medium uppercase ${
+                      isToday ? "text-primary" : "text-muted"
+                    }`}>
+                    {day.toLocaleDateString("en-US", {
+                      weekday: "short",
+                    })}
+                  </p>
+
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span
+                      className={`font-mono text-xl font-semibold ${
+                        isToday ? "text-primary" : "text-foreground"
+                      }`}>
+                      {day.getDate()}
+                    </span>
+
+                    {dayJobs.length > 0 && (
+                      <span className="rounded-full bg-surface-secondary px-2 py-0.5 font-mono text-xs text-muted">
+                        {dayJobs.length}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {dayJobs.length === 0 ? (
+                    <p className="py-3 text-center text-xs text-muted">
+                      No jobs
+                    </p>
+                  ) : (
+                    dayJobs.map((job) => (
+                      <Link
+                        key={job.id}
+                        href={`/org/${slug}/jobs/${job.id}`}
+                        className="block space-y-2 rounded-lg border border-border bg-surface-secondary p-3 transition-colors hover:border-primary">
+                        <p className="wrap-break-word text-xs font-semibold text-foreground">
+                          {job.title}
+                        </p>
+
+                        <p className="font-mono text-xs text-primary">
+                          {formatTime(job.scheduled_start, timezone)}
+                        </p>
+
+                        <p className="truncate text-xs text-muted">
+                          {job.customerName}
+                        </p>
+
+                        <span className="inline-block rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">
+                          {statusLabels[job.status] ?? job.status}
+                        </span>
+                      </Link>
+                    ))
+                  )}
+                </div>
               </div>
-
-              {dayJobs.length === 0 ? (
-                <p className="text-xs text-gray-400">No jobs</p>
-              ) : (
-                dayJobs.map((job) => (
-                  <Link
-                    key={job.id}
-                    href={`/org/${slug}/jobs/${job.id}`}
-                    className="block space-y-1 rounded-md border p-2 hover:bg-gray-50">
-                    <p className="text-xs font-semibold">{job.title}</p>
-
-                    <p className="text-xs text-gray-500">
-                      {formatTime(job.scheduled_start, timezone)}
-                    </p>
-
-                    <p className="truncate text-xs text-gray-500">
-                      {job.customerName}
-                    </p>
-
-                    <p className="text-xs">
-                      {statusLabels[job.status] ?? job.status}
-                    </p>
-                  </Link>
-                ))
-              )}
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
     </section>
   )

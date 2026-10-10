@@ -27,6 +27,8 @@ type Props = {
   job: Job
 }
 
+const inputClass =
+  "w-full min-w-0 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
 export function JobManager({ slug, timezone, job }: Props) {
   const router = useRouter()
 
@@ -59,6 +61,7 @@ export function JobManager({ slug, timezone, job }: Props) {
         })
 
         setSaved(true)
+        router.refresh()
       } catch (error) {
         setError(
           error instanceof Error ? error.message : "Unable to update job.",
@@ -75,6 +78,7 @@ export function JobManager({ slug, timezone, job }: Props) {
       try {
         await updateJobStatus(slug, job.id, value)
         setStatus(value)
+        router.refresh()
       } catch (error) {
         setError(
           error instanceof Error ? error.message : "Unable to update status.",
@@ -101,106 +105,180 @@ export function JobManager({ slug, timezone, job }: Props) {
   }
 
   return (
-    <section className="space-y-5 rounded-lg border p-5">
-      <h2 className="text-lg font-semibold">Manage Job</h2>
+    <section className="space-y-6 rounded-xl border border-border bg-surface p-6">
+      <div>
+        <h2 className="font-mono text-lg font-semibold text-foreground">
+          Manage job
+        </h2>
+
+        <p className="mt-1 text-sm text-muted">
+          Update job details, status, and scheduling.
+        </p>
+      </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Status</label>
+        <label
+          htmlFor="job-status"
+          className="block text-sm font-medium text-foreground">
+          Job status
+        </label>
 
         <select
+          id="job-status"
           value={status}
           disabled={pending}
           onChange={(event) => changeStatus(event.target.value as JobStatus)}
-          className="w-full rounded-md border p-3">
+          className={inputClass}>
           <option value="scheduled">Scheduled</option>
-          <option value="in_progress">In Progress</option>
+          <option value="in_progress">In progress</option>
           <option value="completed">Completed</option>
           <option value="canceled">Canceled</option>
         </select>
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Title</label>
+      <div className="space-y-5 border-t border-border pt-6">
+        <div>
+          <h3 className="font-mono text-base font-semibold text-foreground">
+            Job details
+          </h3>
 
-        <input
-          value={title}
-          disabled={pending}
-          maxLength={200}
-          onChange={(event) => setTitle(event.target.value)}
-          className="w-full rounded-md border p-3"
-        />
-      </div>
+          <p className="mt-1 text-sm text-muted">
+            Information about the work being performed.
+          </p>
+        </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Description</label>
-
-        <textarea
-          value={description}
-          disabled={pending}
-          onChange={(event) => setDescription(event.target.value)}
-          rows={4}
-          className="w-full rounded-md border p-3"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Scheduled Start</label>
+          <label
+            htmlFor="job-edit-title"
+            className="block text-sm font-medium text-foreground">
+            Title
+          </label>
 
           <input
-            type="datetime-local"
-            value={start}
+            id="job-edit-title"
+            value={title}
             disabled={pending}
-            onChange={(event) => setStart(event.target.value)}
-            className="w-full rounded-md border p-3"
+            maxLength={200}
+            onChange={(event) => setTitle(event.target.value)}
+            className={inputClass}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Scheduled End</label>
+          <label
+            htmlFor="job-edit-description"
+            className="block text-sm font-medium text-foreground">
+            Description
+          </label>
 
-          <input
-            type="datetime-local"
-            value={end}
+          <textarea
+            id="job-edit-description"
+            value={description}
             disabled={pending}
-            onChange={(event) => setEnd(event.target.value)}
-            className="w-full rounded-md border p-3"
+            onChange={(event) => setDescription(event.target.value)}
+            rows={4}
+            placeholder="Describe the work to be completed..."
+            className={inputClass}
           />
         </div>
+      </div>
+
+      <div className="space-y-5 border-t border-border pt-6">
+        <div>
+          <h3 className="font-mono text-base font-semibold text-foreground">
+            Schedule
+          </h3>
+
+          <p className="mt-1 text-sm text-muted">
+            Adjust the planned start and end times.
+          </p>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label
+              htmlFor="job-edit-start"
+              className="block text-sm font-medium text-foreground">
+              Scheduled start
+            </label>
+
+            <input
+              id="job-edit-start"
+              type="datetime-local"
+              value={start}
+              disabled={pending}
+              onChange={(event) => setStart(event.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="job-edit-end"
+              className="block text-sm font-medium text-foreground">
+              Scheduled end
+            </label>
+
+            <input
+              id="job-edit-end"
+              type="datetime-local"
+              value={end}
+              disabled={pending}
+              onChange={(event) => setEnd(event.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        <p className="text-xs text-muted">
+          Times are displayed in your organization&apos;s timezone.
+        </p>
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-500">
           {error}
         </p>
       )}
 
       {saved && (
-        <p role="status" className="text-sm text-green-600">
+        <p role="status" className="text-sm text-primary">
           Job updated successfully.
         </p>
       )}
 
-      <button
-        type="button"
-        disabled={pending}
-        onClick={saveJob}
-        className="rounded-md bg-black px-5 py-3 text-white disabled:opacity-50">
-        {pending ? "Saving..." : "Save Changes"}
-      </button>
+      <div className="flex justify-end border-t border-border pt-6">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={saveJob}
+          className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
+          {pending ? "Saving..." : "Save changes"}
+        </button>
+      </div>
 
-      <div className="border-t pt-5">
+      <div className="space-y-3 border-t border-border pt-6">
+        <h3 className="font-mono text-sm font-semibold text-foreground">
+          Danger zone
+        </h3>
+
+        <p className="text-sm text-muted">
+          Permanently delete this job. Its linked customer and estimate will
+          remain unchanged.
+        </p>
+
         <button
           type="button"
           disabled={pending}
           onClick={() => setConfirmDelete(true)}
-          className="rounded-md border border-red-500 px-4 py-2 text-sm text-red-600 disabled:opacity-50">
-          Delete Job
+          className="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50">
+          Delete job
         </button>
       </div>
+
       <ConfirmDialog
         open={confirmDelete}
-        title="Delete Job?"
+        title="Delete job?"
         description="This will permanently delete the job. Any linked customer or estimate will remain unchanged."
         pending={pending}
         error={confirmDelete ? error : ""}

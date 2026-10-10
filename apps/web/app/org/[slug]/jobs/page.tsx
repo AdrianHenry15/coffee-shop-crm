@@ -88,62 +88,96 @@ export default async function JobsPage({ params }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Jobs</h1>
-        <p className="text-sm text-gray-500">
-          Manage customer work and scheduling.
+    <div className="space-y-8">
+      <header>
+        <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Operations management
         </p>
-      </div>
+
+        <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+          Jobs
+        </h1>
+
+        <p className="mt-2 text-sm text-muted">
+          Manage customer work and scheduling for {organization.name}.
+        </p>
+      </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
         {[
           { label: "Scheduled", value: counts.scheduled },
-          { label: "In Progress", value: counts.inProgress },
+          { label: "In progress", value: counts.inProgress },
           { label: "Completed", value: counts.completed },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-lg border p-5">
-            <p className="text-sm text-gray-500">{stat.label}</p>
-            <p className="text-2xl font-bold">{stat.value}</p>
+          <div
+            key={stat.label}
+            className="rounded-xl border border-border bg-surface p-5">
+            <p className="font-mono text-xs font-medium uppercase tracking-wide text-muted">
+              {stat.label}
+            </p>
+
+            <p className="mt-3 font-mono text-3xl font-semibold text-foreground">
+              {stat.value}
+            </p>
           </div>
         ))}
       </div>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">All Jobs</h2>
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              All jobs
+            </h2>
+
+            <p className="mt-1 text-sm text-muted">
+              Track scheduled, active, and completed work.
+            </p>
+          </div>
+
+          <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
+            {jobs.length} total
+          </span>
+        </div>
 
         {jobs.length === 0 ? (
-          <p className="rounded-lg border p-5 text-sm text-gray-500">
-            No jobs yet. Create your first job below.
-          </p>
+          <div className="rounded-xl border border-border bg-surface p-8 text-center">
+            <p className="font-mono text-sm font-medium text-foreground">
+              No jobs yet
+            </p>
+
+            <p className="mt-2 text-sm text-muted">
+              Create your first job using the form below.
+            </p>
+          </div>
         ) : (
-          <div className="divide-y rounded-lg border">
+          <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
             {jobs.map((job) => (
               <div
                 key={job.id}
-                className="flex flex-wrap items-center justify-between gap-4 p-4">
-                <div>
+                className="flex flex-wrap items-center justify-between gap-4 p-5">
+                <div className="min-w-0 space-y-2">
                   <Link
                     href={`/org/${slug}/jobs/${job.id}`}
-                    className="font-medium hover:underline">
+                    className="font-medium text-foreground transition-colors hover:text-primary hover:underline">
                     {job.title}
                   </Link>
 
-                  <p className="text-sm text-gray-500">
-                    {customerNames.get(job.customer_id) ?? "Unknown Customer"}
+                  <p className="text-sm text-muted">
+                    {customerNames.get(job.customer_id) ?? "Unknown customer"}
                   </p>
 
                   {job.scheduled_start && (
-                    <p className="text-sm text-gray-500">
+                    <p className="font-mono text-xs text-muted">
                       {formatOrganizationDateTime(
                         job.scheduled_start,
                         organization.timezone,
-                      )}{" "}
+                      )}
                     </p>
                   )}
                 </div>
 
-                <span className="rounded-full border px-3 py-1 text-sm">
+                <span className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-medium text-primary">
                   {statusLabels[job.status] ?? job.status}
                 </span>
               </div>
@@ -152,18 +186,32 @@ export default async function JobsPage({ params }: Props) {
         )}
       </section>
 
-      <JobForm
-        slug={slug}
-        timezone={organization.timezone}
-        customers={customers}
-        estimates={estimates}
-      />
+      <section className="rounded-xl border border-border bg-surface p-6">
+        <div className="mb-6">
+          <h2 className="font-mono text-lg font-semibold text-foreground">
+            Create job
+          </h2>
 
-      <Link
-        href={`/org/${slug}/customers`}
-        className="inline-block text-sm underline">
-        View Customers
-      </Link>
+          <p className="mt-1 text-sm text-muted">
+            Schedule new work for a customer or an accepted estimate.
+          </p>
+        </div>
+
+        <JobForm
+          slug={slug}
+          timezone={organization.timezone}
+          customers={customers}
+          estimates={estimates}
+        />
+      </section>
+
+      <div className="flex justify-end">
+        <Link
+          href={`/org/${slug}/customers`}
+          className="text-sm font-medium text-primary hover:underline">
+          View customers →
+        </Link>
+      </div>
     </div>
   )
 }

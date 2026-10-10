@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
 import { JobManager } from "@/app/components/crm/managers/job-manager"
+import { formatOrganizationDateTime } from "@/app/lib/dates"
 
 type Props = {
   params: Promise<{
@@ -52,45 +53,90 @@ export default async function JobDetailsPage({ params }: Props) {
     .single()
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6">
-      <Link href={`/org/${slug}/jobs`} className="text-sm underline">
-        ← Back to Jobs
+    <div className="mx-auto max-w-5xl space-y-8">
+      <Link
+        href={`/org/${slug}/jobs`}
+        className="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-primary">
+        ← Back to jobs
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold">{job.title}</h1>
-
-        <p className="text-sm text-gray-500">
-          Created {new Date(job.created_at).toLocaleDateString()}
+      <header className="space-y-3">
+        <p className="font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Operations management / Job details
         </p>
-      </div>
 
-      <section className="space-y-2 rounded-lg border p-5">
-        <h2 className="font-semibold">Customer</h2>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="wrap-break-word font-mono text-3xl font-semibold tracking-tight text-foreground">
+              {job.title}
+            </h1>
 
-        <p>{customer?.name ?? "Unknown Customer"}</p>
+            <p className="mt-2 text-sm text-muted">
+              Created {new Date(job.created_at).toLocaleDateString()}
+            </p>
+          </div>
 
-        {customer?.email && (
-          <p className="text-sm text-gray-500">{customer.email}</p>
-        )}
+          <span className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-medium text-primary">
+            {job.status === "in_progress"
+              ? "In progress"
+              : job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+          </span>
+        </div>
+      </header>
 
-        {customer?.phone && (
-          <p className="text-sm text-gray-500">{customer.phone}</p>
-        )}
+      <section className="rounded-xl border border-border bg-surface p-6">
+        <h2 className="mb-5 font-mono text-lg font-semibold text-foreground">
+          Customer
+        </h2>
+
+        <div className="space-y-3">
+          <p className="text-base font-medium text-foreground">
+            {customer?.name ?? "Unknown customer"}
+          </p>
+
+          {customer?.email && (
+            <p className="wrap-break-word text-sm text-muted">
+              {customer.email}
+            </p>
+          )}
+
+          {customer?.phone && (
+            <p className="text-sm text-muted">{customer.phone}</p>
+          )}
+        </div>
       </section>
 
-      {job.estimate_id && (
-        <Link
-          href={`/org/${slug}/estimates/${job.estimate_id}`}
-          className="inline-block text-sm underline">
-          View Linked Estimate →
-        </Link>
-      )}
+      {(job.estimate_id || job.completed_at) && (
+        <section className="grid gap-4 sm:grid-cols-2">
+          {job.estimate_id && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <p className="font-mono text-xs font-medium uppercase tracking-wide text-muted">
+                Linked estimate
+              </p>
 
-      {job.completed_at && (
-        <p className="text-sm text-gray-500">
-          Completed {new Date(job.completed_at).toLocaleString()}
-        </p>
+              <Link
+                href={`/org/${slug}/estimates/${job.estimate_id}`}
+                className="mt-3 inline-block text-sm font-medium text-primary hover:underline">
+                View estimate →
+              </Link>
+            </div>
+          )}
+
+          {job.completed_at && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <p className="font-mono text-xs font-medium uppercase tracking-wide text-muted">
+                Completed
+              </p>
+
+              <p className="mt-3 font-mono text-sm font-medium text-foreground">
+                {formatOrganizationDateTime(
+                  job.completed_at,
+                  organization.timezone,
+                )}
+              </p>
+            </div>
+          )}
+        </section>
       )}
 
       <JobManager
