@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { getOrganization } from "@/lib/organizations"
 import { createClient } from "@/app/lib/supabase/server"
-import { EstimateForm } from "@/app/components/crm/estimate-form"
+import { EstimateForm } from "@/app/components/crm/forms/estimate-form"
 
 type Props = {
   params: Promise<{ slug: string }>

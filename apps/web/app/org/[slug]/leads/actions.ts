@@ -4,7 +4,15 @@ import { createClient } from "@/app/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-export async function createLead(formData: FormData) {
+export type CreateLeadState = {
+  success: boolean
+  message: string
+}
+
+export async function createLead(
+  _previousState: CreateLeadState,
+  formData: FormData,
+): Promise<CreateLeadState> {
   const slug = String(formData.get("slug") ?? "")
   const name = String(formData.get("name") ?? "").trim()
   const email = String(formData.get("email") ?? "").trim()
@@ -12,7 +20,10 @@ export async function createLead(formData: FormData) {
   const notes = String(formData.get("notes") ?? "").trim()
 
   if (!name || name.length > 200) {
-    throw new Error("A valid lead name is required.")
+    return {
+      success: false,
+      message: "A valid lead name is required.",
+    }
   }
 
   const supabase = await createClient()
@@ -23,8 +34,6 @@ export async function createLead(formData: FormData) {
     redirect("/login")
   }
 
-  // Resolve the organization from the route slug.
-  // Never trust an organization ID submitted by the browser.
   const { data: organization, error: orgError } = await supabase
     .from("organizations")
     .select("id")
@@ -32,7 +41,10 @@ export async function createLead(formData: FormData) {
     .single()
 
   if (orgError || !organization) {
-    throw new Error("Organization not found.")
+    return {
+      success: false,
+      message: "Organization not found.",
+    }
   }
 
   const { error } = await supabase.from("leads").insert({
@@ -44,10 +56,21 @@ export async function createLead(formData: FormData) {
   })
 
   if (error) {
-    throw new Error("Unable to create lead.")
+    console.error("Error creating lead:", error)
+
+    return {
+      success: false,
+      message: "Unable to create lead.",
+    }
   }
 
   revalidatePath(`/org/${slug}/leads`)
+  revalidatePath(`/org/${slug}/dashboard`)
+
+  return {
+    success: true,
+    message: "Lead created successfully.",
+  }
 }
 
 export async function updateLead(formData: FormData) {

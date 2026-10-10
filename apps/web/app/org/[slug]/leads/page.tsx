@@ -2,6 +2,8 @@ import { getOrganization } from "@/lib/organizations"
 import { createLead } from "./actions"
 import { createClient } from "@/app/lib/supabase/server"
 import { LeadManager } from "@/app/components/crm/managers/lead-manager"
+import { SubmitButton } from "@/app/components/crm/ui/submit-button"
+import { LeadForm } from "@/app/components/crm/forms/lead-form"
 
 export default async function LeadsPage({
   params,
@@ -58,44 +60,7 @@ export default async function LeadsPage({
       <section className="rounded-lg border p-5">
         <h2 className="mb-4 text-lg font-semibold">Add lead</h2>
 
-        <form action={createLead} className="space-y-4">
-          <input type="hidden" name="slug" value={slug} />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <input
-              name="name"
-              required
-              maxLength={200}
-              placeholder="Name"
-              className="rounded-md border p-3"
-            />
-
-            <input
-              name="email"
-              type="email"
-              placeholder="Email"
-              className="rounded-md border p-3"
-            />
-
-            <input
-              name="phone"
-              placeholder="Phone"
-              className="rounded-md border p-3"
-            />
-
-            <input
-              name="notes"
-              placeholder="Notes"
-              className="rounded-md border p-3"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="rounded-md bg-black px-5 py-3 text-white">
-            Create lead
-          </button>
-        </form>
+        <LeadForm slug={slug} />
       </section>
 
       <section className="space-y-4">

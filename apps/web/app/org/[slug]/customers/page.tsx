@@ -2,6 +2,7 @@ import { getOrganization } from "@/lib/organizations"
 import { createCustomer } from "./actions"
 import { createClient } from "@/app/lib/supabase/server"
 import { CustomerManager } from "@/app/components/crm/managers/customer-manager"
+import { SubmitButton } from "@/app/components/crm/ui/submit-button"
 
 export default async function CustomersPage({
   params,
@@ -67,11 +68,11 @@ export default async function CustomersPage({
             />
           </div>
 
-          <button
-            type="submit"
+          <SubmitButton
+            pendingLabel="Creating customer..."
             className="rounded-md bg-black px-5 py-3 text-white">
             Create customer
-          </button>
+          </SubmitButton>
         </form>
       </section>
 

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
-import { JobForm } from "@/app/components/crm/job-form"
+import { JobForm } from "@/app/components/crm/forms/job-form"
 import { formatOrganizationDateTime } from "@/app/lib/dates"
 
 type Props = {
