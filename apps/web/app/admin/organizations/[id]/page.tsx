@@ -1,6 +1,9 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/server"
+import { GrantPartnerButton } from "./grant-partner-button"
+import { MaintenanceForm } from "./maintenance-form"
+import { RevokePartnerButton } from "./revoke-partner-button"
 
 function formatDate(value: string | null) {
   if (!value) return "Not set"
@@ -121,6 +124,16 @@ export default async function OrganizationDetailsPage({
               {formatDate(organization.partner_granted_at)}
             </p>
           </div>
+
+          {organization.benefit_level === "standard" && (
+            <GrantPartnerButton organizationId={organization.organization_id} />
+          )}
+          {organization.partner_granted_at && (
+            <RevokePartnerButton
+              organizationId={organization.organization_id}
+              organizationName={organization.organization_name}
+            />
+          )}
         </section>
       </div>
 
@@ -149,6 +162,14 @@ export default async function OrganizationDetailsPage({
               {formatDate(organization.maintenance_ends_at)}
             </p>
           </div>
+
+          {organization.partner_granted_at && (
+            <MaintenanceForm
+              organizationId={organization.organization_id}
+              startDate={organization.maintenance_starts_at}
+              endDate={organization.maintenance_ends_at}
+            />
+          )}
         </div>
       </section>
 
