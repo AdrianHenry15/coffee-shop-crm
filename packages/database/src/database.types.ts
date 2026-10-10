@@ -518,6 +518,44 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_admin_audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string
+          created_at: string
+          id: number
+          new_values: Json | null
+          organization_id: string
+          previous_values: Json | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          created_at?: string
+          id?: never
+          new_values?: Json | null
+          organization_id: string
+          previous_values?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          created_at?: string
+          id?: never
+          new_values?: Json | null
+          organization_id?: string
+          previous_values?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_admin_audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -596,6 +634,48 @@ export type Database = {
           subscription_status: string
           used: number
         }[]
+      }
+      get_platform_organization_details: {
+        Args: { org_uuid: string }
+        Returns: {
+          benefit_level: string
+          maintenance_ends_at: string
+          maintenance_starts_at: string
+          organization_created_at: string
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+          partner_granted_at: string
+          plan_id: string
+          plan_name: string
+          subscription_status: string
+        }[]
+      }
+      get_platform_organizations: {
+        Args: { page_number?: number; page_size?: number; search_term?: string }
+        Returns: {
+          benefit_level: string
+          organization_created_at: string
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+          plan_id: string
+          plan_name: string
+          subscription_status: string
+          total_count: number
+        }[]
+      }
+      grant_organization_partner: {
+        Args: { org_uuid: string }
+        Returns: undefined
+      }
+      revoke_organization_partner: {
+        Args: { org_uuid: string }
+        Returns: undefined
+      }
+      set_organization_maintenance: {
+        Args: { ends_at: string; org_uuid: string; starts_at: string }
+        Returns: undefined
       }
       update_estimate_items: {
         Args: {
