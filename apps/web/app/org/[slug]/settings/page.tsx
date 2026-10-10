@@ -4,6 +4,7 @@ import { OrganizationSettings } from "@/app/components/crm/organization-settings
 import { OrganizationProfile } from "@/app/components/crm/organization-profile"
 import { OrganizationMembers } from "@/app/components/crm/organization-members"
 import { OrganizationSubscription } from "@/app/components/crm/organization-subscription"
+import { OrganizationPlans } from "@/app/components/crm/organization-plans"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -22,6 +23,20 @@ export default async function SettingsPage({ params }: Props) {
   if (subscriptionError) {
     throw new Error("Unable to load subscription usage")
   }
+
+  const { data: billingPlans, error: plansError } = await supabase
+    .from("billing_plans")
+    .select("*")
+
+  if (plansError) {
+    throw new Error("Unable to load billing plans")
+  }
+
+  const planOrder = ["free", "starter", "pro"]
+
+  const sortedPlans = (billingPlans ?? []).sort(
+    (a, b) => planOrder.indexOf(a.id) - planOrder.indexOf(b.id),
+  )
 
   const {
     data: { user },
@@ -99,6 +114,13 @@ export default async function SettingsPage({ params }: Props) {
       />
 
       <OrganizationSubscription usage={subscriptionUsage ?? []} />
+
+      {subscriptionUsage?.[0] && (
+        <OrganizationPlans
+          plans={sortedPlans}
+          currentPlanId={subscriptionUsage[0].plan_id}
+        />
+      )}
 
       <OrganizationMembers
         members={membersWithProfiles}
