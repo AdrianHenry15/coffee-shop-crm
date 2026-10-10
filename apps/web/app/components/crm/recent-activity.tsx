@@ -23,35 +23,57 @@ const activityLabels = {
 
 export function RecentActivity({ activities }: Props) {
   return (
-    <section className="rounded-lg border p-6">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-semibold">Recent Activity</h2>
+    <section className="rounded-xl border border-border bg-surface p-5 md:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-mono text-base font-semibold text-foreground">
+            Recent Activity
+          </h2>
 
-        <span className="text-xs text-gray-500">
-          Latest {activities.length} records
+          <p className="mt-1 text-sm text-muted">
+            Latest updates across your workspace
+          </p>
+        </div>
+
+        <span className="rounded-md bg-surface-secondary px-3 py-1 font-mono text-xs text-muted">
+          {activities.length} records
         </span>
       </div>
 
       {activities.length === 0 ? (
-        <p className="text-sm text-gray-500">
-          Activity will appear here as you use the CRM.
-        </p>
+        <div className="rounded-lg bg-surface-secondary p-5">
+          <p className="text-sm text-muted">
+            Activity will appear here as you use the CRM.
+          </p>
+        </div>
       ) : (
-        <div className="divide-y">
+        <div className="divide-y divide-border">
           {activities.map((activity) => (
             <Link
               key={`${activity.type}-${activity.id}`}
               href={activity.href}
-              className="flex flex-wrap items-center justify-between gap-3 py-4 transition hover:opacity-70">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{activity.title}</p>
+              className="
+                flex flex-wrap items-center
+                justify-between gap-3
+                rounded-md px-2 py-4
+                transition-colors
+                hover:bg-surface-secondary
+              ">
+              <div className="min-w-0 space-y-1">
+                <p className="text-sm font-medium text-foreground">
+                  {activity.type === "activity"
+                    ? activity.title
+                    : activityLabels[activity.type]}
+                </p>
 
-                <p className="text-sm text-gray-500">{activity.description}</p>
+                <p className="wrap-break-word text-sm text-muted">
+                  {activity.description}
+                </p>
               </div>
 
               <time
                 dateTime={activity.createdAt}
-                className="text-xs text-gray-500">
+                className="shrink-0 font-mono text-xs text-muted">
                 {new Date(activity.createdAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",

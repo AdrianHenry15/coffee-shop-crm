@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 import { logout } from "@/app/auth/actions"
+import { ThemeSwitcher } from "./theme-switcher"
 
 type Organization = {
   id: string
@@ -64,17 +65,18 @@ export function Sidebar({ currentSlug, organizations }: Props) {
       <aside
         id="crm-sidebar"
         className={`
-          fixed inset-y-0 left-0 z-50 flex w-64
-          flex-col border-r border-border bg-surface p-5
-          transition-transform duration-200
-          md:sticky md:top-0 md:h-screen md:translate-x-0
-          ${open ? "translate-x-0" : "-translate-x-full"}
-        `}>
+  fixed inset-y-0 left-0 z-50 flex w-64
+  flex-col border-r border-white/10
+  bg-sidebar p-5 text-sidebar-foreground
+  transition-transform duration-200
+  md:sticky md:top-0 md:h-screen md:translate-x-0
+  ${open ? "translate-x-0" : "-translate-x-full"}
+`}>
         <Link
           href="/dashboard"
           className="text-lg font-bold"
           onClick={() => setOpen(false)}>
-          CoffeeShopCRM
+          CoffeeShop
         </Link>
 
         <div className="mt-6">
@@ -97,8 +99,8 @@ export function Sidebar({ currentSlug, organizations }: Props) {
                 aria-current={active ? "page" : undefined}
                 className={`block rounded-md px-3 py-2 text-sm transition-colors ${
                   active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground/70 hover:bg-surface-secondary hover:text-foreground"
+                    ? "bg-[#006241] font-medium text-white"
+                    : "text-sidebar-muted hover:bg-white/10 hover:text-white"
                 }`}>
                 {item.label}
               </Link>
@@ -106,10 +108,19 @@ export function Sidebar({ currentSlug, organizations }: Props) {
           })}
         </nav>
 
+        <div className="mb-5 border-t border-white/10 pt-5">
+          <ThemeSwitcher />
+        </div>
+
         <form action={logout}>
           <button
             type="submit"
-            className="w-full rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-surface-secondary">
+            className="
+  w-full rounded-md border border-white/20
+  px-3 py-2 text-left text-sm
+  text-sidebar-foreground
+  transition-colors hover:bg-white/10
+">
             Log out
           </button>
         </form>

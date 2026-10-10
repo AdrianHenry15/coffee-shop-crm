@@ -23,9 +23,21 @@ export function WorkspaceSwitcher({ currentSlug, organizations }: Props) {
         router.push(`/org/${event.target.value}/dashboard`)
       }}
       aria-label="Select workspace"
-      className="w-full rounded-md border bg-white p-2 text-sm text-black">
+      className="
+        w-full rounded-lg
+        border border-sidebar-muted/30
+        bg-white/10 px-3 py-2.5
+        text-sm text-sidebar-foreground
+        outline-none transition-colors
+        hover:bg-white/15
+        focus:border-sidebar-foreground
+        focus:ring-2 focus:ring-sidebar-foreground/20
+      ">
       {organizations.map((organization) => (
-        <option key={organization.id} value={organization.slug}>
+        <option
+          key={organization.id}
+          value={organization.slug}
+          className="bg-sidebar text-sidebar-foreground">
           {organization.name}
         </option>
       ))}

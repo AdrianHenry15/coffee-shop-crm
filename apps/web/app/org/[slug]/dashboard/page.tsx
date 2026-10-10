@@ -285,11 +285,20 @@ export default async function OrganizationDashboard({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold">Dashboard</h1>
+      {/* Dashboard Header */}
+      <header>
+        <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Workspace / Overview
+        </p>
 
-        <p className="mt-2 text-gray-500">Overview of {organization.name}</p>
-      </div>
+        <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+          Dashboard
+        </h1>
+
+        <p className="mt-2 text-sm text-muted">
+          Overview of {organization.name}
+        </p>
+      </header>
 
       {/* Statistics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -297,14 +306,27 @@ export default async function OrganizationDashboard({
           <Link
             key={stat.label}
             href={`/org/${slug}/${stat.href}`}
-            className="rounded-lg border p-5 transition hover:bg-gray-50">
-            <p className="text-sm text-gray-500">{stat.label}</p>
+            className="
+            group rounded-xl border border-border
+            bg-surface p-5 transition-all
+            hover:-translate-y-0.5
+            hover:border-primary/40
+            hover:shadow-sm
+          ">
+            <p className="text-sm text-muted">{stat.label}</p>
 
-            <p className="mt-3 text-3xl font-semibold">{stat.value}</p>
+            <p className="mt-3 font-mono text-3xl font-semibold tracking-tight text-primary">
+              {stat.value}
+            </p>
+
+            <p className="mt-3 text-xs text-muted transition-colors group-hover:text-primary">
+              View details →
+            </p>
           </Link>
         ))}
       </div>
 
+      {/* Pipeline */}
       <PipelineOverview
         leads={pipeline.leads}
         estimates={pipeline.estimates}
@@ -312,42 +334,59 @@ export default async function OrganizationDashboard({
       />
 
       {/* Upcoming Jobs */}
-      <section className="rounded-lg border p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Upcoming Jobs</h2>
+      <section className="rounded-xl border border-border bg-surface p-5 md:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-mono text-base font-semibold text-foreground">
+              Upcoming Jobs
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Scheduled for the next seven days
+            </p>
+          </div>
 
-          <Link href={`/org/${slug}/schedule`} className="text-sm underline">
-            View Schedule
+          <Link
+            href={`/org/${slug}/schedule`}
+            className="text-sm font-medium text-primary hover:underline">
+            View Schedule →
           </Link>
         </div>
 
         {upcomingJobs.length === 0 ? (
-          <p className="mt-4 text-sm text-gray-500">
-            No upcoming jobs in the next 7 days.
-          </p>
+          <div className="mt-5 rounded-lg bg-surface-secondary p-5">
+            <p className="text-sm text-muted">
+              No upcoming jobs in the next 7 days.
+            </p>
+          </div>
         ) : (
-          <div className="mt-4 divide-y">
+          <div className="mt-5 divide-y divide-border">
             {upcomingJobs.map((job) => (
               <Link
                 key={job.id}
                 href={`/org/${slug}/jobs/${job.id}`}
-                className="flex flex-wrap items-center justify-between gap-4 py-4 hover:bg-gray-50">
+                className="
+                flex flex-wrap items-center
+                justify-between gap-4
+                rounded-md px-2 py-4
+                transition-colors
+                hover:bg-surface-secondary
+              ">
                 <div>
-                  <p className="font-medium">{job.title}</p>
+                  <p className="font-medium text-foreground">{job.title}</p>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-muted">
                     {customerNames.get(job.customer_id) ?? "Unknown Customer"}
                   </p>
                 </div>
 
-                <div className="text-right">
-                  <p className="text-sm">
+                <div className="text-left sm:text-right">
+                  <p className="text-sm text-foreground">
                     {job.scheduled_start
                       ? new Date(job.scheduled_start).toLocaleString()
                       : "Unscheduled"}
                   </p>
 
-                  <p className="text-xs text-gray-500">
+                  <p className="mt-1 font-mono text-xs text-primary">
                     {job.status === "in_progress" ? "In Progress" : "Scheduled"}
                   </p>
                 </div>
@@ -361,10 +400,18 @@ export default async function OrganizationDashboard({
       <RecentActivity activities={activities} />
 
       {/* Quick Actions */}
-      <section className="rounded-lg border p-6">
-        <h2 className="font-semibold">Quick Actions</h2>
+      <section className="rounded-xl border border-border bg-surface p-5 md:p-6">
+        <div>
+          <h2 className="font-mono text-base font-semibold text-foreground">
+            Quick Actions
+          </h2>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <p className="mt-1 text-sm text-muted">
+            Jump back into your workflow
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Manage Leads", path: "leads" },
             { label: "Manage Customers", path: "customers" },
@@ -374,7 +421,14 @@ export default async function OrganizationDashboard({
             <Link
               key={action.path}
               href={`/org/${slug}/${action.path}`}
-              className="rounded-lg border p-3 text-center text-sm hover:bg-gray-50">
+              className="
+              rounded-lg border border-border
+              bg-surface-secondary px-4 py-3
+              text-center text-sm font-medium
+              text-foreground transition-colors
+              hover:border-primary/40
+              hover:bg-primary hover:text-primary-foreground
+            ">
               {action.label}
             </Link>
           ))}
