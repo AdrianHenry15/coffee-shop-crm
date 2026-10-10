@@ -52,6 +52,14 @@ values
   'test-organization-b'
 );
 
+-- Keep this test focused on RLS, not subscription limits.
+update public.organization_subscriptions
+set plan_id = 'pro'
+where organization_id in (
+  '10000000-0000-4000-8000-000000000001',
+  '10000000-0000-4000-8000-000000000002'
+);
+
 insert into public.organization_members (
   organization_id,
   user_id,

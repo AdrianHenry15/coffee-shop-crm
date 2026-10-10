@@ -63,6 +63,16 @@ select ok(
   'Test organization exists'
 );
 
+-- Upgrade the test organization to Pro so multiple members
+-- can be created without hitting the Free plan limit.
+update public.organization_subscriptions
+set plan_id = 'pro'
+where organization_id = (
+  select id
+  from public.organizations
+  where slug = 'security-test-organization-014'
+);
+
 -- Add a regular member.
 insert into public.organization_members (
   organization_id,

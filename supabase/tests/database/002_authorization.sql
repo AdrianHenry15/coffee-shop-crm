@@ -49,6 +49,11 @@ values
   'authorization-org-b'
 );
 
+-- Organization A requires multiple members for authorization tests.
+update public.organization_subscriptions
+set plan_id = 'pro'
+where organization_id = '10000000-0000-4000-8000-000000000011';
+
 insert into public.organization_members (
   organization_id, user_id, role
 )

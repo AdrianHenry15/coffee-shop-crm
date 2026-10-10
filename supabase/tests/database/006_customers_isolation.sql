@@ -69,6 +69,14 @@ values
   'customer-org-b-test'
 );
 
+-- Prevent subscription limits from interfering with isolation tests.
+update public.organization_subscriptions
+set plan_id = 'pro'
+where organization_id in (
+  '10000000-0000-4000-8000-000000000061',
+  '10000000-0000-4000-8000-000000000062'
+);
+
 insert into public.organization_members (
   organization_id,
   user_id,

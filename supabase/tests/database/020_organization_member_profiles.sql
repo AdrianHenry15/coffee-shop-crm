@@ -75,6 +75,11 @@ values
   'profiles-test-b-020'
 );
 
+-- This test requires multiple active members in Organization A.
+update public.organization_subscriptions
+set plan_id = 'pro'
+where organization_id = '00000000-0000-4000-8000-000000002011';
+
 insert into public.organization_members (
   organization_id, user_id, role, status
 )

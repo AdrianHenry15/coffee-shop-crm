@@ -34,6 +34,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_plans: {
+        Row: {
+          id: string
+          max_customers: number | null
+          max_estimates: number | null
+          max_jobs: number | null
+          max_leads: number | null
+          max_members: number | null
+          name: string
+        }
+        Insert: {
+          id: string
+          max_customers?: number | null
+          max_estimates?: number | null
+          max_jobs?: number | null
+          max_leads?: number | null
+          max_members?: number | null
+          name: string
+        }
+        Update: {
+          id?: string
+          max_customers?: number | null
+          max_estimates?: number | null
+          max_jobs?: number | null
+          max_leads?: number | null
+          max_members?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
       customer_activities: {
         Row: {
           content: string
@@ -371,6 +401,45 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_subscriptions: {
+        Row: {
+          created_at: string
+          organization_id: string
+          plan_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          organization_id: string
+          plan_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          organization_id?: string
+          plan_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "billing_plans"
             referencedColumns: ["id"]
           },
         ]
