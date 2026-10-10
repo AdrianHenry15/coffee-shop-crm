@@ -95,6 +95,92 @@ export type Database = {
           },
         ]
       }
+      estimate_items: {
+        Row: {
+          created_at: string
+          description: string
+          estimate_id: string
+          id: string
+          organization_id: string
+          position: number
+          quantity: number
+          unit_price_cents: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          estimate_id: string
+          id?: string
+          organization_id: string
+          position?: number
+          quantity?: number
+          unit_price_cents?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          estimate_id?: string
+          id?: string
+          organization_id?: string
+          position?: number
+          quantity?: number
+          unit_price_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimate_items_estimate_same_organization"
+            columns: ["estimate_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      estimates: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimates_customer_same_organization"
+            columns: ["customer_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "estimates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           created_at: string
