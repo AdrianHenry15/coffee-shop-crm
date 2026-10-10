@@ -34,7 +34,7 @@ export function Sidebar({ currentSlug, organizations }: Props) {
   return (
     <>
       {/* Mobile header */}
-      <header className="flex items-center justify-between border-b p-4 md:hidden">
+      <header className="flex items-center justify-between border-b border-border bg-surface p-4 md:hidden">
         <Link href="/dashboard" className="font-semibold">
           CoffeeShopCRM
         </Link>
@@ -45,7 +45,7 @@ export function Sidebar({ currentSlug, organizations }: Props) {
           aria-expanded={open}
           aria-controls="crm-sidebar"
           onClick={() => setOpen(!open)}
-          className="rounded-md border px-3 py-2">
+          className="rounded-md border border-border px-3 py-2">
           {open ? "Close" : "Menu"}
         </button>
       </header>
@@ -65,7 +65,7 @@ export function Sidebar({ currentSlug, organizations }: Props) {
         id="crm-sidebar"
         className={`
           fixed inset-y-0 left-0 z-50 flex w-64
-          flex-col border-r bg-white p-5
+          flex-col border-r border-border bg-surface p-5
           transition-transform duration-200
           md:sticky md:top-0 md:h-screen md:translate-x-0
           ${open ? "translate-x-0" : "-translate-x-full"}
@@ -95,10 +95,10 @@ export function Sidebar({ currentSlug, organizations }: Props) {
                 href={href}
                 onClick={() => setOpen(false)}
                 aria-current={active ? "page" : undefined}
-                className={`block rounded-md px-3 py-2 text-sm ${
+                className={`block rounded-md px-3 py-2 text-sm transition-colors ${
                   active
-                    ? "bg-black text-white"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground/70 hover:bg-surface-secondary hover:text-foreground"
                 }`}>
                 {item.label}
               </Link>
@@ -109,7 +109,7 @@ export function Sidebar({ currentSlug, organizations }: Props) {
         <form action={logout}>
           <button
             type="submit"
-            className="w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-gray-100">
+            className="w-full rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-surface-secondary">
             Log out
           </button>
         </form>
