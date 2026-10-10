@@ -24,6 +24,8 @@ const statusLabels: Record<EstimateStatus, string> = {
   accepted: "Accepted",
   declined: "Declined",
 }
+const inputClass =
+  "w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
 
 type Props = {
   slug: string
@@ -52,6 +54,7 @@ export function EstimateManager({ slug, estimate }: Props) {
       try {
         await updateEstimateStatus(slug, estimate.id, value)
         setStatus(value)
+        router.refresh()
       } catch {
         setError("Unable to update status.")
       }
@@ -87,23 +90,34 @@ export function EstimateManager({ slug, estimate }: Props) {
   }
 
   return (
-    <section className="space-y-5 rounded-lg border p-5">
-      <h2 className="text-lg font-semibold">Manage Estimate</h2>
+    <section className="space-y-6 rounded-xl border border-border bg-surface p-6">
+      <div>
+        <h2 className="font-mono text-lg font-semibold text-foreground">
+          Manage estimate
+        </h2>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Status</label>
+        <p className="mt-1 text-sm text-muted">
+          Update the estimate status, notes, and settings.
+        </p>
+      </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Estimate Status</label>
+      <div className="space-y-3">
+        <label
+          htmlFor="estimate-status"
+          className="block text-sm font-medium text-foreground">
+          Estimate status
+        </label>
 
-          {availableStatuses.length > 0 ? (
+        {availableStatuses.length > 0 ? (
+          <>
             <select
+              id="estimate-status"
               value={status}
               disabled={pending}
               onChange={(event) =>
                 changeStatus(event.target.value as EstimateStatus)
               }
-              className="w-full rounded-md border bg-transparent p-3">
+              className={inputClass}>
               <option value={status}>{statusLabels[status]}</option>
 
               {availableStatuses.map((option) => (
@@ -112,52 +126,77 @@ export function EstimateManager({ slug, estimate }: Props) {
                 </option>
               ))}
             </select>
-          ) : (
-            <p className="text-sm text-gray-500">
-              {statusLabels[status]} — Final status
+
+            <p className="text-xs text-muted">
+              Changing the status updates the estimate workflow.
             </p>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-border bg-surface-secondary px-4 py-3">
+            <p className="font-mono text-sm font-medium text-foreground">
+              {statusLabels[status]}
+            </p>
+
+            <p className="mt-1 text-xs text-muted">
+              This estimate has reached a final status.
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Notes</label>
+      <div className="space-y-3 border-t border-border pt-5">
+        <label
+          htmlFor="estimate-notes"
+          className="block text-sm font-medium text-foreground">
+          Notes
+        </label>
 
         <textarea
+          id="estimate-notes"
           value={notes}
           disabled={pending}
           onChange={(event) => setNotes(event.target.value)}
           rows={4}
-          className="w-full rounded-md border p-3"
+          placeholder="Additional estimate details..."
+          className={inputClass}
         />
 
         <button
           type="button"
           disabled={pending}
           onClick={saveNotes}
-          className="rounded-md border px-4 py-2 text-sm disabled:opacity-50">
-          Save Notes
+          className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary disabled:opacity-50">
+          {pending ? "Saving..." : "Save notes"}
         </button>
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-500">
           {error}
         </p>
       )}
 
-      <div className="border-t pt-5">
+      <div className="space-y-3 border-t border-border pt-5">
+        <h3 className="font-mono text-sm font-semibold text-foreground">
+          Danger zone
+        </h3>
+
+        <p className="text-sm text-muted">
+          Permanently remove this estimate and its associated services.
+        </p>
+
         <button
           type="button"
           disabled={pending}
           onClick={() => setConfirmDelete(true)}
-          className="rounded-md border border-red-500 px-4 py-2 text-sm text-red-600 disabled:opacity-50">
-          Delete Estimate
+          className="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50">
+          Delete estimate
         </button>
       </div>
+
       <ConfirmDialog
         open={confirmDelete}
-        title="Delete Estimate?"
+        title="Delete estimate?"
         description="This will permanently delete the estimate and its services. This action cannot be undone."
         pending={pending}
         error={error}

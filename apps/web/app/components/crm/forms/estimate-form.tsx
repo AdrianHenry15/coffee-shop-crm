@@ -25,6 +25,12 @@ const emptyItem = (): Item => ({
   unitPriceCents: 0,
 })
 
+const inputClass =
+  "w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15"
+
+const secondaryButton =
+  "rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary disabled:opacity-40"
+
 export function EstimateForm({ slug, customers }: Props) {
   const [items, setItems] = useState<Item[]>([emptyItem()])
   const [notes, setNotes] = useState("")
@@ -62,7 +68,9 @@ export function EstimateForm({ slug, customers }: Props) {
       <input type="hidden" name="items" value={JSON.stringify(items)} />
 
       <div className="space-y-2">
-        <label htmlFor="customerId" className="text-sm font-medium">
+        <label
+          htmlFor="customerId"
+          className="block text-sm font-medium text-foreground">
           Customer
         </label>
 
@@ -71,7 +79,7 @@ export function EstimateForm({ slug, customers }: Props) {
           name="customerId"
           required
           defaultValue=""
-          className="w-full rounded-md border p-3">
+          className={inputClass}>
           <option value="" disabled>
             Select a customer
           </option>
@@ -85,26 +93,38 @@ export function EstimateForm({ slug, customers }: Props) {
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Services</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-mono text-base font-semibold text-foreground">
+              Services
+            </h3>
+            <p className="mt-1 text-xs text-muted">
+              Add services, quantities, and pricing.
+            </p>
+          </div>
 
           <button
             type="button"
             disabled={items.length >= 100}
             onClick={() => setItems((current) => [...current, emptyItem()])}
-            className="rounded-md border px-3 py-2 text-sm">
-            + Add Service
+            className={secondaryButton}>
+            + Add service
           </button>
         </div>
 
         {items.map((item, index) => (
           <div
             key={index}
-            className="grid gap-3 rounded-lg border p-4 sm:grid-cols-12">
-            <div className="space-y-1 sm:col-span-5">
-              <label className="text-sm">Description</label>
+            className="grid gap-4 rounded-xl border border-border bg-surface-secondary p-4 sm:grid-cols-12">
+            <div className="space-y-2 sm:col-span-5">
+              <label
+                htmlFor={`service-description-${index}`}
+                className="block text-sm font-medium text-foreground">
+                Description
+              </label>
 
               <input
+                id={`service-description-${index}`}
                 required
                 maxLength={500}
                 value={item.description}
@@ -112,14 +132,19 @@ export function EstimateForm({ slug, customers }: Props) {
                   updateItem(index, "description", event.target.value)
                 }
                 placeholder="Exterior cleaning"
-                className="w-full rounded-md border p-2"
+                className={inputClass}
               />
             </div>
 
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-sm">Quantity</label>
+            <div className="space-y-2 sm:col-span-2">
+              <label
+                htmlFor={`service-quantity-${index}`}
+                className="block text-sm font-medium text-foreground">
+                Quantity
+              </label>
 
               <input
+                id={`service-quantity-${index}`}
                 type="number"
                 min={1}
                 step={1}
@@ -128,14 +153,19 @@ export function EstimateForm({ slug, customers }: Props) {
                 onChange={(event) =>
                   updateItem(index, "quantity", Number(event.target.value))
                 }
-                className="w-full rounded-md border p-2"
+                className={inputClass}
               />
             </div>
 
-            <div className="space-y-1 sm:col-span-3">
-              <label className="text-sm">Unit Price ($)</label>
+            <div className="space-y-2 sm:col-span-3">
+              <label
+                htmlFor={`service-price-${index}`}
+                className="block text-sm font-medium text-foreground">
+                Unit price ($)
+              </label>
 
               <input
+                id={`service-price-${index}`}
                 type="number"
                 min={0}
                 step="0.01"
@@ -148,7 +178,7 @@ export function EstimateForm({ slug, customers }: Props) {
                     Math.round(Number(event.target.value) * 100),
                   )
                 }
-                className="w-full rounded-md border p-2"
+                className={inputClass}
               />
             </div>
 
@@ -157,20 +187,26 @@ export function EstimateForm({ slug, customers }: Props) {
                 type="button"
                 disabled={items.length === 1}
                 onClick={() => removeItem(index)}
-                className="w-full rounded-md border px-3 py-2 text-sm text-red-600 disabled:opacity-40">
+                className="w-full rounded-lg border border-red-500/20 px-3 py-3 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-40">
                 Remove
               </button>
             </div>
 
-            <div className="text-right text-sm font-medium sm:col-span-12">
-              Subtotal: {formatMoney(item.quantity * item.unitPriceCents)}
+            <div className="border-t border-border pt-3 text-right sm:col-span-12">
+              <span className="mr-3 text-xs text-muted">Subtotal</span>
+
+              <span className="font-mono text-sm font-semibold text-foreground">
+                {formatMoney(item.quantity * item.unitPriceCents)}
+              </span>
             </div>
           </div>
         ))}
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="notes" className="text-sm font-medium">
+        <label
+          htmlFor="notes"
+          className="block text-sm font-medium text-foreground">
           Notes
         </label>
 
@@ -181,22 +217,33 @@ export function EstimateForm({ slug, customers }: Props) {
           onChange={(event) => setNotes(event.target.value)}
           rows={3}
           placeholder="Additional estimate details..."
-          className="w-full rounded-md border p-3"
+          className={inputClass}
         />
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border p-5">
-        <span className="font-semibold">Estimate Total</span>
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface-secondary p-5">
+        <div>
+          <p className="font-mono text-sm font-semibold text-foreground">
+            Estimate total
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Calculated from all services
+          </p>
+        </div>
 
-        <span className="text-2xl font-bold">{formatMoney(totalCents)}</span>
+        <span className="font-mono text-2xl font-semibold text-primary">
+          {formatMoney(totalCents)}
+        </span>
       </div>
 
-      <button
-        type="submit"
-        disabled={customers.length === 0}
-        className="rounded-md bg-black px-5 py-3 text-white disabled:opacity-50">
-        Save Draft Estimate
-      </button>
+      <div className="flex justify-end border-t border-border pt-5">
+        <button
+          type="submit"
+          disabled={customers.length === 0}
+          className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
+          Save draft estimate
+        </button>
+      </div>
     </form>
   )
 }

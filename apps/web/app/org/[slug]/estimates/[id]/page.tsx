@@ -72,68 +72,104 @@ export default async function EstimateDetailsPage({ params }: Props) {
   )
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6">
-      <Link href={`/org/${slug}/estimates`} className="text-sm underline">
-        ← Back to Estimates
+    <div className="mx-auto max-w-5xl space-y-8">
+      <Link
+        href={`/org/${slug}/estimates`}
+        className="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-primary">
+        ← Back to estimates
       </Link>
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Estimate Details</h1>
+      <header className="space-y-3">
+        <p className="font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Sales management / Estimate details
+        </p>
 
-          <p className="text-sm text-gray-500">
-            Created {new Date(estimate.created_at).toLocaleDateString()}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+              Estimate details
+            </h1>
+
+            <p className="mt-2 text-sm text-muted">
+              Created {new Date(estimate.created_at).toLocaleDateString()}
+            </p>
+          </div>
+
+          <span className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-medium capitalize text-primary">
+            {estimate.status}
+          </span>
+        </div>
+      </header>
+
+      <section className="rounded-xl border border-border bg-surface p-6">
+        <h2 className="mb-5 font-mono text-lg font-semibold text-foreground">
+          Customer
+        </h2>
+
+        <div className="space-y-3">
+          <p className="text-base font-medium text-foreground">
+            {customer?.name ?? "Unknown customer"}
+          </p>
+
+          {customer?.email && (
+            <p className="wrap-break-word text-sm text-muted">
+              {customer.email}
+            </p>
+          )}
+
+          {customer?.phone && (
+            <p className="text-sm text-muted">{customer.phone}</p>
+          )}
+        </div>
+      </section>
+
+      <section className="space-y-5">
+        <div>
+          <h2 className="font-mono text-lg font-semibold text-foreground">
+            Estimate items
+          </h2>
+
+          <p className="mt-1 text-sm text-muted">
+            Services and pricing included in this estimate.
           </p>
         </div>
 
-        <span className="rounded-full border px-3 py-1 text-sm capitalize">
-          {estimate.status}
-        </span>
-      </div>
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex flex-wrap items-center justify-between gap-4 p-5">
+              <div className="min-w-0 space-y-2">
+                <p className="font-medium text-foreground">
+                  {item.description}
+                </p>
 
-      <section className="space-y-2 rounded-lg border p-5">
-        <h2 className="font-semibold">Customer</h2>
-
-        <p>{customer?.name ?? "Unknown Customer"}</p>
-
-        {customer?.email && (
-          <p className="text-sm text-gray-500">{customer.email}</p>
-        )}
-
-        {customer?.phone && (
-          <p className="text-sm text-gray-500">{customer.phone}</p>
-        )}
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Estimate Items</h2>
-
-        <div className="overflow-hidden rounded-lg border">
-          <div className="divide-y">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-4 p-4">
-                <div>
-                  <p className="font-medium">{item.description}</p>
-
-                  <p className="text-sm text-gray-500">
-                    {item.quantity} × {formatMoney(item.unit_price_cents)}
-                  </p>
-                </div>
-
-                <p className="font-medium">
-                  {formatMoney(item.quantity * item.unit_price_cents)}
+                <p className="font-mono text-xs text-muted">
+                  {item.quantity} × {formatMoney(item.unit_price_cents)}
                 </p>
               </div>
-            ))}
-          </div>
+
+              <p className="font-mono text-sm font-semibold text-foreground">
+                {formatMoney(item.quantity * item.unit_price_cents)}
+              </p>
+            </div>
+          ))}
         </div>
 
-        <div className="flex justify-between rounded-lg border p-5">
-          <span className="font-semibold">Total</span>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface-secondary p-6">
+          <div>
+            <p className="font-mono text-sm font-semibold text-foreground">
+              Estimate total
+            </p>
 
-          <span className="text-xl font-bold">{formatMoney(totalCents)}</span>
+            <p className="mt-1 text-xs text-muted">
+              Total value of all services
+            </p>
+          </div>
+
+          <span className="font-mono text-2xl font-semibold text-primary">
+            {formatMoney(totalCents)}
+          </span>
         </div>
       </section>
 
@@ -150,6 +186,7 @@ export default async function EstimateDetailsPage({ params }: Props) {
           }))}
         />
       )}
+
       <EstimateManager
         slug={slug}
         estimate={{

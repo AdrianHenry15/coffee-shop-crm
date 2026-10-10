@@ -63,82 +63,118 @@ export default async function EstimatesPage({ params }: Props) {
   )
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Estimates</h1>
-        <p className="text-sm text-gray-500">
-          Create and manage customer estimates.
+    <div className="space-y-8">
+      <header>
+        <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Sales management
         </p>
-      </div>
 
-      {/* SAVED ESTIMATES */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">
-          Saved Estimates ({estimates.length})
-        </h2>
+        <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+          Estimates
+        </h1>
+
+        <p className="mt-2 text-sm text-muted">
+          Create and manage customer estimates for {organization.name}.
+        </p>
+      </header>
+
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Saved estimates
+            </h2>
+
+            <p className="mt-1 text-sm text-muted">
+              Review estimates, totals, and their current status.
+            </p>
+          </div>
+
+          <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
+            {estimates.length} total
+          </span>
+        </div>
 
         {estimates.length === 0 ? (
-          <div className="rounded-lg border p-6">
-            <p className="text-sm text-gray-500">No estimates created yet.</p>
+          <div className="rounded-xl border border-border bg-surface p-8 text-center">
+            <p className="font-mono text-sm font-medium text-foreground">
+              No estimates yet
+            </p>
+
+            <p className="mt-2 text-sm text-muted">
+              Create your first estimate using the form below.
+            </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border">
-            <div className="divide-y">
-              {estimates.map((estimate) => {
-                const totalCents = estimate.estimate_items.reduce(
-                  (total, item) =>
-                    total + item.quantity * item.unit_price_cents,
-                  0,
-                )
+          <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+            {estimates.map((estimate) => {
+              const totalCents = estimate.estimate_items.reduce(
+                (total, item) => total + item.quantity * item.unit_price_cents,
+                0,
+              )
 
-                return (
-                  <div
-                    key={estimate.id}
-                    className="flex flex-wrap items-center justify-between gap-4 p-4">
-                    <div className="space-y-1">
-                      <p className="font-medium">
-                        {customerNames.get(estimate.customer_id) ??
-                          "Unknown Customer"}
-                      </p>
+              return (
+                <div
+                  key={estimate.id}
+                  className="flex flex-wrap items-center justify-between gap-4 p-5">
+                  <div className="min-w-0 space-y-2">
+                    <p className="font-medium text-foreground">
+                      {customerNames.get(estimate.customer_id) ??
+                        "Unknown customer"}
+                    </p>
 
-                      <p className="text-xs text-gray-500">
-                        {new Date(estimate.created_at).toLocaleDateString()}
-                      </p>
+                    <p className="font-mono text-xs text-muted">
+                      {new Date(estimate.created_at).toLocaleDateString()}
+                    </p>
 
-                      <p className="text-sm capitalize">
-                        Status: {estimate.status}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-lg font-semibold">
-                        {formatMoney(totalCents)}
-                      </p>
-
-                      <Link
-                        href={`/org/${slug}/estimates/${estimate.id}`}
-                        className="text-sm underline">
-                        View Details
-                      </Link>
-                    </div>
+                    <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-medium capitalize text-primary">
+                      {estimate.status.replaceAll("_", " ")}
+                    </span>
                   </div>
-                )
-              })}
-            </div>
+
+                  <div className="space-y-2 text-right">
+                    <p className="font-mono text-lg font-semibold text-foreground">
+                      {formatMoney(totalCents)}
+                    </p>
+
+                    <Link
+                      href={`/org/${slug}/estimates/${estimate.id}`}
+                      className="inline-flex rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary hover:text-primary">
+                      View details
+                    </Link>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </section>
 
-      {/* CREATE ESTIMATE */}
-      <section className="space-y-4 border-t pt-8">
-        <h2 className="text-xl font-semibold">Create Estimate</h2>
+      <section className="rounded-xl border border-border bg-surface p-6">
+        <div className="mb-6">
+          <h2 className="font-mono text-lg font-semibold text-foreground">
+            Create estimate
+          </h2>
+
+          <p className="mt-1 text-sm text-muted">
+            Prepare a new estimate for an existing customer.
+          </p>
+        </div>
 
         {customers.length > 0 ? (
           <EstimateForm slug={slug} customers={customers} />
         ) : (
-          <p className="text-sm text-gray-500">
-            Create a customer before making an estimate.
-          </p>
+          <div className="rounded-lg border border-dashed border-border bg-surface-secondary p-6">
+            <p className="text-sm text-muted">
+              You need at least one customer before creating an estimate.
+            </p>
+
+            <Link
+              href={`/org/${slug}/customers`}
+              className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">
+              Go to customers →
+            </Link>
+          </div>
         )}
       </section>
     </div>
