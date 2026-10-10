@@ -533,6 +533,17 @@ export type Database = {
         Args: { p_estimate_id: string; p_organization_id: string }
         Returns: undefined
       }
+      get_organization_subscription_usage: {
+        Args: { org_uuid: string }
+        Returns: {
+          plan_id: string
+          plan_name: string
+          resource: string
+          resource_limit: number
+          subscription_status: string
+          used: number
+        }[]
+      }
       update_estimate_items: {
         Args: {
           p_estimate_id: string
