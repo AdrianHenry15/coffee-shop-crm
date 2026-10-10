@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { createJob } from "@/app/org/[slug]/jobs/actions"
-import { localToUTC, organizationTimeToUTC } from "@/app/lib/dates"
+import { organizationTimeToUTC } from "@/app/lib/dates"
 
 type Customer = {
   id: string

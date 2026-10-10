@@ -34,6 +34,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_activities: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          customer_id: string
+          id: string
+          organization_id: string
+          type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          customer_id: string
+          id?: string
+          organization_id: string
+          type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+          organization_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_activities_customer_fk"
+            columns: ["customer_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "customer_activities_organization_fk"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
@@ -402,6 +447,10 @@ export type Database = {
       create_organization: {
         Args: { org_name: string; org_slug: string }
         Returns: string
+      }
+      delete_estimate: {
+        Args: { p_estimate_id: string; p_organization_id: string }
+        Returns: undefined
       }
       update_estimate_items: {
         Args: {

@@ -36,10 +36,16 @@ export async function createJob(formData: FormData) {
   const scheduledStart = parseDate(start)
   const scheduledEnd = parseDate(end)
 
+  console.log({
+    timezoneInputStart: start,
+    timezoneInputEnd: end,
+    scheduledStart,
+    scheduledEnd,
+  })
   if (
     scheduledStart &&
     scheduledEnd &&
-    new Date(scheduledEnd) <= new Date(scheduledStart)
+    Date.parse(scheduledEnd) <= Date.parse(scheduledStart)
   ) {
     throw new Error("End time must be after start time.")
   }

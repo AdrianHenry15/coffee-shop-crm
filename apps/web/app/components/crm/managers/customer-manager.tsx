@@ -7,6 +7,7 @@ import {
   deleteCustomer,
 } from "@/app/org/[slug]/customers/actions"
 import { ConfirmDialog } from "../ui/confirm-dialog"
+import Link from "next/link"
 
 type Customer = {
   id: string
@@ -154,8 +155,11 @@ export function CustomerManager({ slug, customers }: Props) {
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="font-medium">{customer.name}</p>
-
+                    <Link
+                      href={`/org/${slug}/customers/${customer.id}`}
+                      className="font-medium hover:underline">
+                      {customer.name}
+                    </Link>
                     <p className="text-sm text-gray-500">
                       {customer.email ||
                         customer.phone ||

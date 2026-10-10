@@ -1,6 +1,5 @@
 "use client"
 
-import { formatLocalDateTime } from "@/app/lib/dates"
 import { toZonedTime } from "date-fns-tz"
 import Link from "next/link"
 import { useState } from "react"
@@ -52,6 +51,14 @@ function formatTime(value: string, timezone: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value))
+}
+
+function getDateKey(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+
+  return `${year}-${month}-${day}`
 }
 
 export function JobSchedule({ slug, timezone, jobs }: Props) {
@@ -117,11 +124,7 @@ export function JobSchedule({ slug, timezone, jobs }: Props) {
           const dayJobs = jobs
             .filter((job) => {
               const date = toZonedTime(job.scheduled_start, timezone)
-              return (
-                date.getFullYear() === day.getFullYear() &&
-                date.getMonth() === day.getMonth() &&
-                date.getDate() === day.getDate()
-              )
+              return getDateKey(date) === getDateKey(day)
             })
             .sort(
               (a, b) =>
@@ -134,7 +137,7 @@ export function JobSchedule({ slug, timezone, jobs }: Props) {
             toZonedTime(new Date(), timezone).toDateString()
           return (
             <div
-              key={day.toISOString()}
+              key={getDateKey(day)}
               className={`min-h-44 space-y-3 rounded-lg border p-3 ${
                 isToday ? "border-black" : ""
               }`}>

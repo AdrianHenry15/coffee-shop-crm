@@ -164,11 +164,10 @@ export async function updateEstimateNotes(
 export async function deleteEstimate(slug: string, estimateId: string) {
   const { supabase, organization } = await getEstimate(slug, estimateId)
 
-  const { error } = await supabase
-    .from("estimates")
-    .delete()
-    .eq("id", estimateId)
-    .eq("organization_id", organization.id)
+  const { error } = await supabase.rpc("delete_estimate", {
+    p_organization_id: organization.id,
+    p_estimate_id: estimateId,
+  })
 
   if (error) {
     console.error("Delete estimate error:", error)

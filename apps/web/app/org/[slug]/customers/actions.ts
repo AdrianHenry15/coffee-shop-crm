@@ -4,7 +4,15 @@ import { createClient } from "@/app/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-export async function createCustomer(formData: FormData) {
+export type CreateCustomerState = {
+  success: boolean
+  message: string
+}
+
+export async function createCustomer(
+  _previousState: CreateCustomerState,
+  formData: FormData,
+): Promise<CreateCustomerState> {
   const slug = String(formData.get("slug") ?? "")
   const name = String(formData.get("name") ?? "").trim()
   const email = String(formData.get("email") ?? "").trim()
@@ -12,7 +20,10 @@ export async function createCustomer(formData: FormData) {
   const notes = String(formData.get("notes") ?? "").trim()
 
   if (!name || name.length > 200) {
-    throw new Error("A valid customer name is required.")
+    return {
+      success: false,
+      message: "A valid customer name is required.",
+    }
   }
 
   const supabase = await createClient()
@@ -30,7 +41,10 @@ export async function createCustomer(formData: FormData) {
     .single()
 
   if (orgError || !organization) {
-    throw new Error("Organization not found.")
+    return {
+      success: false,
+      message: "Organization not found.",
+    }
   }
 
   const { error } = await supabase.from("customers").insert({
@@ -42,10 +56,21 @@ export async function createCustomer(formData: FormData) {
   })
 
   if (error) {
-    throw new Error("Unable to create customer.")
+    console.error("Error creating customer:", error)
+
+    return {
+      success: false,
+      message: "Unable to create customer.",
+    }
   }
 
   revalidatePath(`/org/${slug}/customers`)
+  revalidatePath(`/org/${slug}/dashboard`)
+
+  return {
+    success: true,
+    message: "Customer created successfully.",
+  }
 }
 
 export async function updateCustomer(formData: FormData) {

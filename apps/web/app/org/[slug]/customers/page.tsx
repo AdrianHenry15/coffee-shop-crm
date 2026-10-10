@@ -1,8 +1,7 @@
 import { getOrganization } from "@/lib/organizations"
-import { createCustomer } from "./actions"
 import { createClient } from "@/app/lib/supabase/server"
 import { CustomerManager } from "@/app/components/crm/managers/customer-manager"
-import { SubmitButton } from "@/app/components/crm/ui/submit-button"
+import { CustomerForm } from "@/app/components/crm/forms/customer-form"
 
 export default async function CustomersPage({
   params,
@@ -34,46 +33,8 @@ export default async function CustomersPage({
       </div>
 
       <section className="rounded-lg border p-5">
-        <h2 className="mb-4 text-lg font-semibold">Add customer</h2>
-
-        <form action={createCustomer} className="space-y-4">
-          <input type="hidden" name="slug" value={slug} />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <input
-              name="name"
-              required
-              maxLength={200}
-              placeholder="Name"
-              className="rounded-md border p-3"
-            />
-
-            <input
-              name="email"
-              type="email"
-              placeholder="Email"
-              className="rounded-md border p-3"
-            />
-
-            <input
-              name="phone"
-              placeholder="Phone"
-              className="rounded-md border p-3"
-            />
-
-            <input
-              name="notes"
-              placeholder="Notes"
-              className="rounded-md border p-3"
-            />
-          </div>
-
-          <SubmitButton
-            pendingLabel="Creating customer..."
-            className="rounded-md bg-black px-5 py-3 text-white">
-            Create customer
-          </SubmitButton>
-        </form>
+        <h2 className="mb-4 text-lg font-semibold">Add Customer</h2>
+        <CustomerForm slug={slug} />
       </section>
 
       <section className="space-y-4">

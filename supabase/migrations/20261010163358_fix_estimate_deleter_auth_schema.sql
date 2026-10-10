@@ -1,0 +1,1 @@
+grant usage on schema auth to estimate_deleter;
