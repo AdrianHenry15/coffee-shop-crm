@@ -33,6 +33,7 @@ const secondaryButton =
 
 export function EstimateForm({ slug, customers }: Props) {
   const [items, setItems] = useState<Item[]>([emptyItem()])
+  const [prices, setPrices] = useState<string[]>([""])
   const [notes, setNotes] = useState("")
 
   function updateItem(
@@ -49,6 +50,7 @@ export function EstimateForm({ slug, customers }: Props) {
 
   function removeItem(index: number) {
     setItems((current) => current.filter((_, i) => i !== index))
+    setPrices((current) => current.filter((_, i) => i !== index))
   }
 
   const totalCents = items.reduce(
@@ -106,7 +108,10 @@ export function EstimateForm({ slug, customers }: Props) {
           <button
             type="button"
             disabled={items.length >= 100}
-            onClick={() => setItems((current) => [...current, emptyItem()])}
+            onClick={() => {
+              setItems((current) => [...current, emptyItem()])
+              setPrices((current) => [...current, ""])
+            }}
             className={secondaryButton}>
             + Add service
           </button>
@@ -166,18 +171,25 @@ export function EstimateForm({ slug, customers }: Props) {
 
               <input
                 id={`service-price-${index}`}
-                type="number"
-                min={0}
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 required
-                value={item.unitPriceCents / 100}
-                onChange={(event) =>
+                value={prices[index] ?? ""}
+                onChange={(event) => {
+                  const value = event.target.value
+
+                  if (!/^\d*(\.\d{0,2})?$/.test(value)) return
+
+                  setPrices((current) =>
+                    current.map((price, i) => (i === index ? value : price)),
+                  )
+
                   updateItem(
                     index,
                     "unitPriceCents",
-                    Math.round(Number(event.target.value) * 100),
+                    Math.round(Number(value || 0) * 100),
                   )
-                }
+                }}
                 className={inputClass}
               />
             </div>

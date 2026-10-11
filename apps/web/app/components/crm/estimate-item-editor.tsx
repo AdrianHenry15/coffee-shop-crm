@@ -33,6 +33,11 @@ export function EstimateItemEditor({
   status,
 }: Props) {
   const [items, setItems] = useState<Item[]>(initialItems)
+  const [prices, setPrices] = useState<string[]>(
+    initialItems.map((item) =>
+      item.unitPriceCents === 0 ? "" : String(item.unitPriceCents / 100),
+    ),
+  )
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
   const [saved, setSaved] = useState(false)
@@ -55,6 +60,7 @@ export function EstimateItemEditor({
 
   function addItem() {
     setSaved(false)
+    setPrices((current) => [...current, ""])
 
     setItems((current) => [
       ...current,
@@ -68,6 +74,7 @@ export function EstimateItemEditor({
 
   function removeItem(index: number) {
     setSaved(false)
+    setPrices((current) => current.filter((_, i) => i !== index))
 
     setItems((current) => current.filter((_, i) => i !== index))
   }
@@ -173,18 +180,25 @@ export function EstimateItemEditor({
 
               <input
                 id={`edit-price-${index}`}
-                type="number"
-                min={0}
-                step="0.01"
-                value={item.unitPriceCents / 100}
+                type="text"
+                inputMode="decimal"
+                value={prices[index] ?? ""}
                 disabled={pending || !canEdit}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const value = event.target.value
+
+                  if (!/^\d*(\.\d{0,2})?$/.test(value)) return
+
+                  setPrices((current) =>
+                    current.map((price, i) => (i === index ? value : price)),
+                  )
+
                   updateItem(
                     index,
                     "unitPriceCents",
-                    Math.round(Number(event.target.value) * 100),
+                    Math.round(Number(value || 0) * 100),
                   )
-                }
+                }}
                 className={inputClass}
               />
             </div>

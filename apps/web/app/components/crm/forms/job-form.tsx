@@ -25,14 +25,22 @@ const inputClass =
   "w-full min-w-0 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15"
 export function JobForm({ slug, timezone, customers, estimates }: Props) {
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? "")
+  const [scheduleError, setScheduleError] = useState("")
 
   const availableEstimates = estimates.filter(
     (estimate) => estimate.customer_id === customerId,
   )
 
   function handleSubmit(formData: FormData) {
+    setScheduleError("")
+
     const start = String(formData.get("scheduledStart") ?? "")
     const end = String(formData.get("scheduledEnd") ?? "")
+
+    if (start && end && end <= start) {
+      setScheduleError("End time must be after start time.")
+      return
+    }
 
     if (start) {
       formData.set("scheduledStart", organizationTimeToUTC(start, timezone))
@@ -179,6 +187,11 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
             />
           </div>
         </div>
+        {scheduleError && (
+          <p role="alert" className="text-sm text-red-500">
+            {scheduleError}
+          </p>
+        )}
 
         <p className="text-xs text-muted">
           Times are entered in your organization&apos;s timezone.
