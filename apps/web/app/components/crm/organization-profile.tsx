@@ -54,59 +54,93 @@ export function OrganizationProfile({ slug, profile, canEdit }: Props) {
   }
 
   return (
-    <section className="max-w-xl space-y-5 rounded-lg border p-6">
+    <section className="space-y-6 rounded-xl border border-border bg-surface p-6">
       <div>
-        <h2 className="font-semibold">Business Information</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="font-mono text-lg font-semibold text-foreground">
+          Business information
+        </h2>
+
+        <p className="mt-1 text-sm text-muted">
           {`Manage your organization's business details.`}
         </p>
       </div>
 
-      {(
-        [
-          ["name", "Business Name"],
-          ["email", "Business Email"],
-          ["phone", "Phone"],
-          ["website", "Website"],
-          ["address", "Address"],
-        ] as const
-      ).map(([field, label]) => (
-        <label key={field} className="block space-y-2">
-          <span className="text-sm font-medium">{label}</span>
+      <div className="grid gap-5 sm:grid-cols-2">
+        {(
+          [
+            ["name", "Business name"],
+            ["email", "Business email"],
+            ["phone", "Phone"],
+            ["website", "Website"],
+            ["address", "Address"],
+          ] as const
+        ).map(([field, label]) => (
+          <label
+            key={field}
+            className={`block space-y-2 ${
+              field === "name" || field === "address" ? "sm:col-span-2" : ""
+            }`}>
+            <span className="block text-sm font-medium text-foreground">
+              {label}
+              {field === "name" && <span className="ml-1 text-primary">*</span>}
+            </span>
 
-          <input
-            type={
-              field === "email" ? "email" : field === "website" ? "url" : "text"
-            }
-            value={form[field]}
-            onChange={(event) => update(field, event.target.value)}
-            disabled={!canEdit || pending}
-            required={field === "name"}
-            maxLength={field === "name" ? 200 : 500}
-            className="w-full rounded-md border bg-transparent p-3 text-sm disabled:opacity-60"
-          />
-        </label>
-      ))}
+            <input
+              type={
+                field === "email"
+                  ? "email"
+                  : field === "website"
+                    ? "url"
+                    : "text"
+              }
+              value={form[field]}
+              onChange={(event) => update(field, event.target.value)}
+              disabled={!canEdit || pending}
+              required={field === "name"}
+              maxLength={field === "name" ? 200 : 500}
+              className="w-full min-w-0 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </label>
+        ))}
+      </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
-
-      {success && !changed && (
-        <p className="text-sm text-green-600">Business information saved.</p>
-      )}
-
-      {canEdit ? (
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={pending || !changed || !form.name.trim()}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-          {pending ? "Saving..." : "Save Business Information"}
-        </button>
-      ) : (
-        <p className="text-xs text-gray-500">
-          Only the organization owner can edit business information.
+      {error && (
+        <p role="alert" className="text-sm text-red-500">
+          {error}
         </p>
       )}
+
+      {success && !changed && (
+        <p role="status" className="text-sm text-primary">
+          Business information saved.
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
+        <div>
+          {!canEdit ? (
+            <p className="text-xs text-muted">
+              Only the organization owner can edit business information.
+            </p>
+          ) : changed ? (
+            <p className="text-xs text-muted">You have unsaved changes.</p>
+          ) : (
+            <p className="text-xs text-muted">
+              Your business profile is up to date.
+            </p>
+          )}
+        </div>
+
+        {canEdit && (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={pending || !changed || !form.name.trim()}
+            className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+            {pending ? "Saving..." : "Save business information"}
+          </button>
+        )}
+      </div>
     </section>
   )
 }

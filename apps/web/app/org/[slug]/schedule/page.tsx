@@ -65,16 +65,24 @@ export default async function SchedulePage({ params }: Props) {
     }))
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Schedule</h1>
-
-        <p className="text-sm text-gray-500">
-          View upcoming and scheduled customer jobs.
+    <div className="space-y-8">
+      <header>
+        <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Operations management
         </p>
-      </div>
 
-      <JobSchedule slug={slug} jobs={jobs} timezone={organization.timezone} />
+        <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+          Schedule
+        </h1>
+
+        <p className="mt-2 text-sm text-muted">
+          View and manage scheduled customer jobs for {organization.name}.
+        </p>
+      </header>
+
+      <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+        <JobSchedule slug={slug} jobs={jobs} timezone={organization.timezone} />
+      </section>
     </div>
   )
 }

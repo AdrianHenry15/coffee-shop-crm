@@ -93,39 +93,89 @@ export default async function SettingsPage({ params }: Props) {
   const canEdit = membership?.role === "owner"
 
   return (
-    <main className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Organization Settings</h1>
-        <p className="text-sm text-gray-500">
-          Manage preferences for {organization.name}.
+    <main className="mx-auto max-w-5xl space-y-8">
+      <header>
+        <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          Workspace management
         </p>
+
+        <h1 className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+          Organization settings
+        </h1>
+
+        <p className="mt-2 text-sm text-muted">
+          Manage your organization, team, and subscription for{" "}
+          {organization.name}.
+        </p>
+      </header>
+
+      <div className="space-y-8">
+        <section className="space-y-4">
+          <div>
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Organization
+            </h2>
+
+            <p className="mt-1 text-sm text-muted">
+              Manage your business profile and workspace preferences.
+            </p>
+          </div>
+
+          <div className="space-y-5">
+            <OrganizationProfile
+              slug={slug}
+              profile={organization}
+              canEdit={canEdit}
+            />
+
+            <OrganizationSettings
+              canEdit={canEdit}
+              slug={slug}
+              timezone={organization.timezone}
+            />
+          </div>
+        </section>
+
+        <section className="space-y-4 border-t border-border pt-8">
+          <div>
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Subscription & billing
+            </h2>
+
+            <p className="mt-1 text-sm text-muted">
+              Review your current plan, usage, and available upgrades.
+            </p>
+          </div>
+
+          <div className="space-y-5">
+            <OrganizationSubscription usage={subscriptionUsage ?? []} />
+
+            {subscriptionUsage?.[0] && (
+              <OrganizationPlans
+                plans={sortedPlans}
+                currentPlanId={subscriptionUsage[0].plan_id}
+              />
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-4 border-t border-border pt-8">
+          <div>
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Team members
+            </h2>
+
+            <p className="mt-1 text-sm text-muted">
+              View and manage the people who have access to your organization.
+            </p>
+          </div>
+
+          <OrganizationMembers
+            members={membersWithProfiles}
+            currentUserId={user.id}
+          />
+        </section>
       </div>
-
-      <OrganizationProfile
-        slug={slug}
-        profile={organization}
-        canEdit={canEdit}
-      />
-
-      <OrganizationSettings
-        canEdit={canEdit}
-        slug={slug}
-        timezone={organization.timezone}
-      />
-
-      <OrganizationSubscription usage={subscriptionUsage ?? []} />
-
-      {subscriptionUsage?.[0] && (
-        <OrganizationPlans
-          plans={sortedPlans}
-          currentPlanId={subscriptionUsage[0].plan_id}
-        />
-      )}
-
-      <OrganizationMembers
-        members={membersWithProfiles}
-        currentUserId={user.id}
-      />
     </main>
   )
 }

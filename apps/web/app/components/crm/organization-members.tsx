@@ -13,35 +13,60 @@ type Props = {
 
 export function OrganizationMembers({ members, currentUserId }: Props) {
   return (
-    <section className="max-w-xl space-y-5 rounded-lg border p-6">
+    <section className="space-y-6 rounded-xl border border-border bg-surface p-6">
       <div>
-        <h2 className="font-semibold">Team Members</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          People associated with this organization.
+        <h2 className="font-mono text-lg font-semibold text-foreground">
+          Team members
+        </h2>
+
+        <p className="mt-1 text-sm text-muted">
+          People associated with this organization and their access roles.
         </p>
       </div>
 
       {members.length === 0 ? (
-        <p className="text-sm text-gray-500">No organization members found.</p>
+        <div className="rounded-lg border border-dashed border-border bg-surface-secondary px-5 py-10 text-center">
+          <p className="text-sm font-medium text-foreground">
+            No organization members found
+          </p>
+
+          <p className="mt-1 text-xs text-muted">
+            Members associated with your organization will appear here.
+          </p>
+        </div>
       ) : (
-        <div className="divide-y">
+        <div className="divide-y divide-border">
           {members.map((member) => (
             <div
               key={member.id}
-              className="flex items-center justify-between gap-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium">
-                  {member.name ?? "Unnamed Member"}
-                  {member.user_id === currentUserId && " (You)"}
-                </p>
+              className="flex flex-wrap items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-sm font-semibold text-primary">
+                  {(member.name?.trim() || "?").charAt(0).toUpperCase()}
+                </div>
 
-                <p className="text-xs capitalize text-gray-500">
-                  {member.status}
-                </p>
+                <div className="min-w-0 space-y-1">
+                  <p className="wrap-break-word text-sm font-medium text-foreground">
+                    {member.name ?? "Unnamed member"}
+
+                    {member.user_id === currentUserId && (
+                      <span className="ml-2 text-xs font-normal text-muted">
+                        (You)
+                      </span>
+                    )}
+                  </p>
+
+                  <p
+                    className={`text-xs font-medium capitalize ${
+                      member.status === "active" ? "text-primary" : "text-muted"
+                    }`}>
+                    {member.status.replaceAll("_", " ")}
+                  </p>
+                </div>
               </div>
 
-              <span className="rounded-md border px-3 py-1 text-xs capitalize">
-                {member.role}
+              <span className="rounded-full border border-border bg-surface-secondary px-3 py-1 font-mono text-xs font-medium capitalize text-foreground">
+                {member.role.replaceAll("_", " ")}
               </span>
             </div>
           ))}

@@ -23,11 +23,14 @@ const resources: {
 
 export function OrganizationPlans({ plans, currentPlanId }: Props) {
   return (
-    <section className="space-y-4 rounded-lg border p-6">
+    <section className="space-y-6 rounded-xl border border-border bg-surface p-6">
       <div>
-        <h2 className="text-lg font-semibold">Compare Plans</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Explore the available subscription plans.
+        <h2 className="font-mono text-lg font-semibold text-foreground">
+          Compare plans
+        </h2>
+
+        <p className="mt-1 text-sm text-muted">
+          Explore available subscription plans and compare resource limits.
         </p>
       </div>
 
@@ -38,40 +41,58 @@ export function OrganizationPlans({ plans, currentPlanId }: Props) {
           return (
             <div
               key={plan.id}
-              className={`flex flex-col gap-4 rounded-lg border p-4 ${
-                isCurrent ? "border-blue-500" : ""
+              className={`flex flex-col gap-5 rounded-xl border p-5 ${
+                isCurrent
+                  ? "border-primary bg-primary/5"
+                  : "border-border bg-background"
               }`}>
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="font-semibold">{plan.name}</h3>
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-mono text-lg font-semibold text-foreground">
+                    {plan.name}
+                  </h3>
 
-                {isCurrent && (
-                  <span className="rounded-full bg-blue-600 px-2 py-1 text-xs text-white">
-                    Current
-                  </span>
-                )}
+                  {isCurrent && (
+                    <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
+                      Current
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted">
+                  {isCurrent
+                    ? "Your organization's active plan."
+                    : "Available subscription tier."}
+                </p>
               </div>
 
-              <div className="flex-1 space-y-3">
-                {resources.map(({ key, label }) => (
-                  <div key={key} className="flex justify-between gap-2 text-sm">
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      {label}
-                    </span>
+              <div className="flex-1 space-y-4 border-t border-border pt-5">
+                <p className="font-mono text-xs font-medium uppercase tracking-wide text-muted">
+                  Resource limits
+                </p>
 
-                    <span className="font-medium">
+                {resources.map(({ key, label }) => (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-muted">{label}</span>
+
+                    <span className="font-mono font-medium text-foreground">
                       {plan[key] ?? "Unlimited"}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="border-t pt-3 text-center text-sm">
+              <div className="border-t border-border pt-4">
                 {isCurrent ? (
-                  <span className="font-medium">Your current plan</span>
+                  <div className="rounded-lg bg-primary/10 px-4 py-3 text-center text-sm font-medium text-primary">
+                    Your current plan
+                  </div>
                 ) : (
-                  <span className="text-neutral-500 dark:text-neutral-400">
+                  <div className="rounded-lg border border-border bg-surface-secondary px-4 py-3 text-center text-sm text-muted">
                     Coming soon
-                  </span>
+                  </div>
                 )}
               </div>
             </div>
