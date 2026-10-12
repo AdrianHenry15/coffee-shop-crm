@@ -15,7 +15,9 @@ from public, anon, authenticated;
 grant execute on function private.estimate_deletion_user_id()
 to estimate_deleter;
 
--- Temporarily assume the function owner's role.
+-- Temporarily allow the function owner to replace its function.
+grant create on schema public to estimate_deleter;
+
 set role estimate_deleter;
 
 -- Update the deletion RPC to use the helper.
@@ -53,5 +55,8 @@ begin
 end;
 $$;
 
--- Reset the role to the default.
+-- Restore the migration role.
 reset role;
+
+-- Remove temporary schema creation privileges.
+revoke create on schema public from estimate_deleter;

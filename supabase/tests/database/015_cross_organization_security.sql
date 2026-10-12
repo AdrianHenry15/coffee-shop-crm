@@ -108,11 +108,6 @@ select is(
   (
     select count(*)::integer
     from public.estimates
-    where organization_id = (
-      select id
-      from public.organizations
-      where slug = 'security-tenant-b-015'
-    )
   ),
   0,
   'Tenant A cannot read Tenant B estimates'

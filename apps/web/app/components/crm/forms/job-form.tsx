@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { createJob } from "@/app/org/[slug]/jobs/actions"
 import { organizationTimeToUTC } from "@/app/lib/dates"
+import { toast } from "sonner"
+import { isRedirectError } from "next/dist/client/components/redirect-error"
 
 type Customer = {
   id: string
@@ -28,13 +30,18 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
   const [start, setStart] = useState("")
   const [end, setEnd] = useState("")
   const [scheduleError, setScheduleError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const submittingRef = useRef(false)
 
   const availableEstimates = estimates.filter(
     (estimate) => estimate.customer_id === customerId,
   )
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (submittingRef.current) return
+
     setScheduleError("")
 
     const formData = new FormData(event.currentTarget)
@@ -55,7 +62,23 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
       formData.set("scheduledEnd", organizationTimeToUTC(end, timezone))
     }
 
-    void createJob(formData)
+    submittingRef.current = true
+    setIsSubmitting(true)
+
+    try {
+      await createJob(formData)
+    } catch (error) {
+      if (isRedirectError(error)) {
+        throw error
+      }
+
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create job.",
+      )
+
+      submittingRef.current = false
+      setIsSubmitting(false)
+    }
   }
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -241,9 +264,9 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
 
         <button
           type="submit"
-          disabled={customers.length === 0}
-          className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
-          Create job
+          disabled={customers.length === 0 || isSubmitting}
+          className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+          {isSubmitting ? "Creating job..." : "Create job"}
         </button>
       </div>
     </form>

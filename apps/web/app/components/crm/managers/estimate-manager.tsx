@@ -44,13 +44,10 @@ export function EstimateManager({ slug, estimate }: Props) {
 
   const [notes, setNotes] = useState(estimate.notes ?? "")
   const [pending, startTransition] = useTransition()
-  const [error, setError] = useState("")
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const availableStatuses = statusOptions[status]
   function changeStatus(value: EstimateStatus) {
-    setError("")
-
     startTransition(async () => {
       try {
         await updateEstimateStatus(slug, estimate.id, value)
@@ -86,8 +83,6 @@ export function EstimateManager({ slug, estimate }: Props) {
     })
   }
   function removeEstimate() {
-    setError("")
-
     startTransition(async () => {
       try {
         await deleteEstimate(slug, estimate.id)
@@ -184,12 +179,6 @@ export function EstimateManager({ slug, estimate }: Props) {
         </button>
       </div>
 
-      {error && (
-        <p role="alert" className="text-sm text-red-500">
-          {error}
-        </p>
-      )}
-
       <div className="space-y-3 border-t border-border pt-5">
         <h3 className="font-mono text-sm font-semibold text-foreground">
           Danger zone
@@ -216,7 +205,6 @@ export function EstimateManager({ slug, estimate }: Props) {
         error={""}
         onCancel={() => {
           setConfirmDelete(false)
-          setError("")
         }}
         onConfirm={removeEstimate}
       />

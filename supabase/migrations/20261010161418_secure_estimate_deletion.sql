@@ -151,10 +151,13 @@ $$;
 grant estimate_deleter to postgres
 with set true, inherit false;
 
+-- Transfer ownership to the dedicated deletion role.
 alter function public.delete_estimate(uuid, uuid)
+owner to estimate_deleter;
+
+-- Remove schema creation privileges after ownership transfer.
 revoke create on schema public
 from estimate_deleter;
-owner to estimate_deleter;
 
 revoke all on function public.delete_estimate(uuid, uuid)
 from public, anon;
