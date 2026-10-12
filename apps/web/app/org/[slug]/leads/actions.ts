@@ -223,5 +223,5 @@ export async function convertLead(formData: FormData) {
   revalidatePath(`/org/${slug}/leads`)
   revalidatePath(`/org/${slug}/customers`)
 
-  redirect(`/org/${slug}/customers`)
+  redirect(`/org/${slug}/customers?success=converted`)
 }

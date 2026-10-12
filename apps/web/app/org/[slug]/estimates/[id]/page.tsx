@@ -7,6 +7,8 @@ import {
   EstimateStatus,
 } from "@/app/components/crm/managers/estimate-manager"
 import { EstimateItemEditor } from "@/app/components/crm/estimate-item-editor"
+import { Suspense } from "react"
+import { RedirectToast } from "@/app/components/crm/ui/redirect-toast"
 
 type Props = {
   params: Promise<{
@@ -22,6 +24,9 @@ function formatMoney(cents: number) {
   }).format(cents / 100)
 }
 
+const estimateMessages = {
+  created: "Estimate created successfully.",
+}
 export default async function EstimateDetailsPage({ params }: Props) {
   const { slug, id } = await params
 
@@ -73,6 +78,10 @@ export default async function EstimateDetailsPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
+      <Suspense fallback={null}>
+        <RedirectToast messages={estimateMessages} />
+      </Suspense>
+
       <Link
         href={`/org/${slug}/estimates`}
         className="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-primary">

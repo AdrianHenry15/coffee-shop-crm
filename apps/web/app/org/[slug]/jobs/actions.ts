@@ -107,7 +107,7 @@ export async function createJob(formData: FormData) {
   }
 
   revalidatePath(`/org/${slug}/jobs`)
-  redirect(`/org/${slug}/jobs`)
+  redirect(`/org/${slug}/jobs?success=created`)
 }
 
 type JobStatus = "scheduled" | "in_progress" | "completed" | "canceled"
@@ -253,5 +253,5 @@ export async function deleteJob(slug: string, jobId: string) {
 
   revalidatePath(`/org/${slug}/jobs`)
 
-  redirect(`/org/${slug}/jobs`)
+  redirect(`/org/${slug}/jobs?success=deleted`)
 }

@@ -8,6 +8,7 @@ import {
 } from "@/app/org/[slug]/estimates/actions"
 import { ConfirmDialog } from "../ui/confirm-dialog"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export type EstimateStatus = "draft" | "sent" | "accepted" | "declined"
 
@@ -53,14 +54,21 @@ export function EstimateManager({ slug, estimate }: Props) {
     startTransition(async () => {
       try {
         await updateEstimateStatus(slug, estimate.id, value)
+
         setStatus(value)
+        toast.success(
+          `Estimate marked as ${statusLabels[value].toLowerCase()}.`,
+        )
         router.refresh()
-      } catch {
-        setError("Unable to update status.")
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Unable to update estimate status.",
+        )
       }
     })
   }
-
   function saveNotes() {
     setError("")
 

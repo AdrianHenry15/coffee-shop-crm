@@ -6,6 +6,7 @@ import {
   type CreateLeadState,
 } from "@/app/org/[slug]/leads/actions"
 import { SubmitButton } from "../ui/submit-button"
+import { toast } from "sonner"
 
 type Props = {
   slug: string
@@ -24,8 +25,13 @@ export function LeadForm({ slug }: Props) {
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
+    if (!state.message) return
+
     if (state.success) {
       formRef.current?.reset()
+      toast.success(state.message)
+    } else {
+      toast.error(state.message)
     }
   }, [state])
 
@@ -94,16 +100,6 @@ export function LeadForm({ slug }: Props) {
           />
         </div>
       </div>
-
-      {state.message && (
-        <p
-          role="status"
-          className={`text-sm ${
-            state.success ? "text-primary" : "text-red-500"
-          }`}>
-          {state.message}
-        </p>
-      )}
 
       <div className="flex justify-end border-t border-border pt-5">
         <SubmitButton

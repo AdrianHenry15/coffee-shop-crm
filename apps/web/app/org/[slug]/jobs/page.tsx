@@ -3,6 +3,8 @@ import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
 import { JobForm } from "@/app/components/crm/forms/job-form"
 import { formatOrganizationDateTime } from "@/app/lib/dates"
+import { Suspense } from "react"
+import { RedirectToast } from "@/app/components/crm/ui/redirect-toast"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -15,6 +17,10 @@ const statusLabels: Record<string, string> = {
   canceled: "Canceled",
 }
 
+const jobMessages = {
+  created: "Job created successfully.",
+  deleted: "Job deleted successfully.",
+}
 export default async function JobsPage({ params }: Props) {
   const { slug } = await params
 
@@ -89,6 +95,10 @@ export default async function JobsPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
+      <Suspense fallback={null}>
+        <RedirectToast messages={jobMessages} />
+      </Suspense>
+
       <header>
         <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
           Operations management

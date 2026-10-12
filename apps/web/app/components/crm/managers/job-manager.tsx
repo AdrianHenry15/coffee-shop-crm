@@ -9,6 +9,7 @@ import {
 import { organizationTimeToUTC, utcToOrganizationTime } from "@/app/lib/dates"
 import { ConfirmDialog } from "../ui/confirm-dialog"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 type JobStatus = "scheduled" | "in_progress" | "completed" | "canceled"
 
@@ -43,14 +44,13 @@ export function JobManager({ slug, timezone, job }: Props) {
   )
 
   const [pending, startTransition] = useTransition()
-  const [error, setError] = useState("")
-  const [saved, setSaved] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   function saveJob() {
-    setError("")
-    setSaved(false)
-
+    if (start && end && end <= start) {
+      toast.error("End time must be after start time.")
+      return
+    }
     startTransition(async () => {
       try {
         await updateJob(slug, job.id, {
@@ -60,10 +60,10 @@ export function JobManager({ slug, timezone, job }: Props) {
           scheduledEnd: organizationTimeToUTC(end, timezone),
         })
 
-        setSaved(true)
+        toast.success("Job updated successfully.")
         router.refresh()
       } catch (error) {
-        setError(
+        toast.error(
           error instanceof Error ? error.message : "Unable to update job.",
         )
       }
@@ -71,16 +71,15 @@ export function JobManager({ slug, timezone, job }: Props) {
   }
 
   function changeStatus(value: JobStatus) {
-    setError("")
-    setSaved(false)
-
     startTransition(async () => {
       try {
         await updateJobStatus(slug, job.id, value)
+
         setStatus(value)
+        toast.success("Job status updated.")
         router.refresh()
       } catch (error) {
-        setError(
+        toast.error(
           error instanceof Error ? error.message : "Unable to update status.",
         )
       }
@@ -88,16 +87,15 @@ export function JobManager({ slug, timezone, job }: Props) {
   }
 
   function removeJob() {
-    setError("")
-
     startTransition(async () => {
       try {
         await deleteJob(slug, job.id)
-
-        router.push(`/org/${slug}/jobs`)
-        router.refresh()
       } catch (error) {
-        setError(
+        if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
+          throw error
+        }
+
+        toast.error(
           error instanceof Error ? error.message : "Unable to delete job.",
         )
       }
@@ -207,7 +205,15 @@ export function JobManager({ slug, timezone, job }: Props) {
               type="datetime-local"
               value={start}
               disabled={pending}
-              onChange={(event) => setStart(event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value
+                setStart(value)
+
+                if (end && value && end <= value) {
+                  setEnd("")
+                  toast.error("End time must be after start time.")
+                }
+              }}
               className={inputClass}
             />
           </div>
@@ -224,7 +230,18 @@ export function JobManager({ slug, timezone, job }: Props) {
               type="datetime-local"
               value={end}
               disabled={pending}
-              onChange={(event) => setEnd(event.target.value)}
+              min={start || undefined}
+              onChange={(event) => {
+                const value = event.target.value
+
+                if (start && value && value <= start) {
+                  setEnd("")
+                  toast.error("End time must be after start time.")
+                  return
+                }
+
+                setEnd(value)
+              }}
               className={inputClass}
             />
           </div>
@@ -234,18 +251,6 @@ export function JobManager({ slug, timezone, job }: Props) {
           Times are displayed in your organization&apos;s timezone.
         </p>
       </div>
-
-      {error && (
-        <p role="alert" className="text-sm text-red-500">
-          {error}
-        </p>
-      )}
-
-      {saved && (
-        <p role="status" className="text-sm text-primary">
-          Job updated successfully.
-        </p>
-      )}
 
       <div className="flex justify-end border-t border-border pt-6">
         <button
@@ -281,10 +286,9 @@ export function JobManager({ slug, timezone, job }: Props) {
         title="Delete job?"
         description="This will permanently delete the job. Any linked customer or estimate will remain unchanged."
         pending={pending}
-        error={confirmDelete ? error : ""}
+        error={""}
         onCancel={() => {
           setConfirmDelete(false)
-          setError("")
         }}
         onConfirm={removeJob}
       />

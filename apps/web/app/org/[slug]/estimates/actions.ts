@@ -70,7 +70,7 @@ export async function createEstimate(formData: FormData) {
 
   revalidatePath(`/org/${slug}/estimates`)
 
-  redirect(`/org/${slug}/estimates/${estimateId}`)
+  redirect(`/org/${slug}/estimates/${estimateId}?success=created`)
 }
 
 type EstimateStatus = "draft" | "sent" | "accepted" | "declined"

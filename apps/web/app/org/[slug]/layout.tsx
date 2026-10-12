@@ -1,6 +1,7 @@
 import { Sidebar } from "@/app/components/crm/sidebar"
 import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
+import { Toaster } from "sonner"
 
 export default async function OrganizationLayout({
   children,
@@ -43,6 +44,14 @@ export default async function OrganizationLayout({
       <main className="min-w-0 flex-1 bg-background px-4 py-6 md:px-8 md:py-8 lg:px-10">
         <div className="mx-auto w-full max-w-7xl">{children}</div>
       </main>
+
+      <Toaster
+        position="top-right"
+        richColors
+        closeButton
+        duration={4000}
+        theme="system"
+      />
     </div>
   )
 }

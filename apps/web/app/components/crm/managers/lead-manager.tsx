@@ -8,6 +8,7 @@ import {
   convertLead,
 } from "@/app/org/[slug]/leads/actions"
 import { ConfirmDialog } from "../ui/confirm-dialog"
+import { toast } from "sonner"
 
 type Lead = {
   id: string
@@ -47,9 +48,7 @@ export function LeadManager({ slug, leads }: Props) {
 
   const [search, setSearch] = useState("")
   const [editing, setEditing] = useState<string | null>(null)
-  const [editError, setEditError] = useState("")
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
-  const [deleteError, setDeleteError] = useState("")
 
   const [pending, startTransition] = useTransition()
   const [saving, startSaveTransition] = useTransition()
@@ -65,15 +64,15 @@ export function LeadManager({ slug, leads }: Props) {
   })
 
   function saveLead(formData: FormData) {
-    setEditError("")
-
     startSaveTransition(async () => {
       try {
         await updateLead(formData)
+
         setEditing(null)
+        toast.success("Lead updated successfully.")
         router.refresh()
       } catch (error) {
-        setEditError(
+        toast.error(
           error instanceof Error ? error.message : "Unable to update lead.",
         )
       }
@@ -87,21 +86,36 @@ export function LeadManager({ slug, leads }: Props) {
     formData.set("slug", slug)
     formData.set("id", selectedLead.id)
 
-    setDeleteError("")
-
     startTransition(async () => {
       try {
         await deleteLead(formData)
+
         setSelectedLead(null)
+        toast.success("Lead deleted successfully.")
         router.refresh()
       } catch (error) {
-        setDeleteError(
+        toast.error(
           error instanceof Error ? error.message : "Unable to delete lead.",
         )
       }
     })
   }
 
+  function handleConversion(formData: FormData) {
+    startTransition(async () => {
+      try {
+        await convertLead(formData)
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
+          throw error
+        }
+
+        toast.error(
+          error instanceof Error ? error.message : "Unable to convert lead.",
+        )
+      }
+    })
+  }
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-surface p-4">
@@ -196,12 +210,6 @@ export function LeadManager({ slug, leads }: Props) {
                       className={inputClass}
                     />
 
-                    {editError && (
-                      <p role="alert" className="text-sm text-red-500">
-                        {editError}
-                      </p>
-                    )}
-
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="submit"
@@ -215,7 +223,6 @@ export function LeadManager({ slug, leads }: Props) {
                         disabled={saving}
                         onClick={() => {
                           setEditing(null)
-                          setEditError("")
                         }}
                         className={secondaryButton}>
                         Cancel
@@ -251,7 +258,7 @@ export function LeadManager({ slug, leads }: Props) {
 
                     <div className="flex flex-wrap items-center gap-2">
                       {!isConverted && lead.status !== "lost" && (
-                        <form action={convertLead}>
+                        <form action={handleConversion}>
                           <input type="hidden" name="slug" value={slug} />
                           <input type="hidden" name="leadId" value={lead.id} />
 
@@ -268,7 +275,6 @@ export function LeadManager({ slug, leads }: Props) {
                         type="button"
                         disabled={pending || saving}
                         onClick={() => {
-                          setEditError("")
                           setEditing(lead.id)
                         }}
                         className={secondaryButton}>
@@ -280,7 +286,6 @@ export function LeadManager({ slug, leads }: Props) {
                         disabled={pending || saving}
                         onClick={() => {
                           setSelectedLead(lead)
-                          setDeleteError("")
                         }}
                         className="rounded-lg border border-red-500/20 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50">
                         Delete
@@ -299,10 +304,9 @@ export function LeadManager({ slug, leads }: Props) {
         title={`Delete ${selectedLead?.name ?? "Lead"}?`}
         description="This will permanently delete the lead. Any customer converted from this lead will remain in the CRM."
         pending={pending}
-        error={deleteError}
+        error={""}
         onCancel={() => {
           setSelectedLead(null)
-          setDeleteError("")
         }}
         onConfirm={removeLead}
       />

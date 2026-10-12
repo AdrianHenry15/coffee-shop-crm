@@ -2,7 +2,12 @@ import { getOrganization } from "@/lib/organizations"
 import { createClient } from "@/app/lib/supabase/server"
 import { CustomerManager } from "@/app/components/crm/managers/customer-manager"
 import { CustomerForm } from "@/app/components/crm/forms/customer-form"
+import { Suspense } from "react"
+import { RedirectToast } from "@/app/components/crm/ui/redirect-toast"
 
+const customerMessages = {
+  converted: "Lead converted to customer successfully.",
+}
 export default async function CustomersPage({
   params,
 }: {
@@ -25,6 +30,10 @@ export default async function CustomersPage({
 
   return (
     <div className="space-y-8">
+      <Suspense fallback={null}>
+        <RedirectToast messages={customerMessages} />
+      </Suspense>
+
       <header>
         <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
           Customer management

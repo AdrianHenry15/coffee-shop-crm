@@ -8,6 +8,7 @@ import {
   deleteCustomer,
 } from "@/app/org/[slug]/customers/actions"
 import { ConfirmDialog } from "../ui/confirm-dialog"
+import { toast } from "sonner"
 
 type Customer = {
   id: string
@@ -43,11 +44,9 @@ export function CustomerManager({ slug, customers }: Props) {
 
   const [search, setSearch] = useState("")
   const [editing, setEditing] = useState<string | null>(null)
-  const [editError, setEditError] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
   )
-  const [deleteError, setDeleteError] = useState("")
 
   const [pending, startTransition] = useTransition()
   const [saving, startSaveTransition] = useTransition()
@@ -63,15 +62,15 @@ export function CustomerManager({ slug, customers }: Props) {
   })
 
   function saveCustomer(formData: FormData) {
-    setEditError("")
-
     startSaveTransition(async () => {
       try {
         await updateCustomer(formData)
+
         setEditing(null)
+        toast.success("Customer updated successfully.")
         router.refresh()
       } catch (error) {
-        setEditError(
+        toast.error(
           error instanceof Error ? error.message : "Unable to update customer.",
         )
       }
@@ -81,8 +80,6 @@ export function CustomerManager({ slug, customers }: Props) {
   function removeCustomer() {
     if (!selectedCustomer) return
 
-    setDeleteError("")
-
     const formData = new FormData()
     formData.set("slug", slug)
     formData.set("id", selectedCustomer.id)
@@ -90,10 +87,12 @@ export function CustomerManager({ slug, customers }: Props) {
     startTransition(async () => {
       try {
         await deleteCustomer(formData)
+
         setSelectedCustomer(null)
+        toast.success("Customer deleted successfully.")
         router.refresh()
       } catch (error) {
-        setDeleteError(
+        toast.error(
           error instanceof Error ? error.message : "Unable to delete customer.",
         )
       }
@@ -190,12 +189,6 @@ export function CustomerManager({ slug, customers }: Props) {
                     className={inputClass}
                   />
 
-                  {editError && (
-                    <p role="alert" className="text-sm text-red-500">
-                      {editError}
-                    </p>
-                  )}
-
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="submit"
@@ -209,7 +202,6 @@ export function CustomerManager({ slug, customers }: Props) {
                       disabled={saving}
                       onClick={() => {
                         setEditing(null)
-                        setEditError("")
                       }}
                       className={secondaryButton}>
                       Cancel
@@ -254,7 +246,6 @@ export function CustomerManager({ slug, customers }: Props) {
                       type="button"
                       disabled={pending || saving}
                       onClick={() => {
-                        setEditError("")
                         setEditing(customer.id)
                       }}
                       className={secondaryButton}>
@@ -265,7 +256,6 @@ export function CustomerManager({ slug, customers }: Props) {
                       type="button"
                       disabled={pending || saving}
                       onClick={() => {
-                        setDeleteError("")
                         setSelectedCustomer(customer)
                       }}
                       className="rounded-lg border border-red-500/20 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50">
@@ -284,10 +274,9 @@ export function CustomerManager({ slug, customers }: Props) {
         title={`Delete ${selectedCustomer?.name ?? "Customer"}?`}
         description="This will permanently delete the customer. This action cannot be undone. Customers with linked estimates or jobs may not be deletable."
         pending={pending}
-        error={deleteError}
+        error={""}
         onCancel={() => {
           setSelectedCustomer(null)
-          setDeleteError("")
         }}
         onConfirm={removeCustomer}
       />

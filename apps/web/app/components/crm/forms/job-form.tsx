@@ -25,14 +25,19 @@ const inputClass =
   "w-full min-w-0 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15"
 export function JobForm({ slug, timezone, customers, estimates }: Props) {
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? "")
+  const [start, setStart] = useState("")
+  const [end, setEnd] = useState("")
   const [scheduleError, setScheduleError] = useState("")
 
   const availableEstimates = estimates.filter(
     (estimate) => estimate.customer_id === customerId,
   )
 
-  function handleSubmit(formData: FormData) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setScheduleError("")
+
+    const formData = new FormData(event.currentTarget)
 
     const start = String(formData.get("scheduledStart") ?? "")
     const end = String(formData.get("scheduledEnd") ?? "")
@@ -50,11 +55,10 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
       formData.set("scheduledEnd", organizationTimeToUTC(end, timezone))
     }
 
-    return createJob(formData)
+    void createJob(formData)
   }
-
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <input type="hidden" name="slug" value={slug} />
 
       <div className="grid gap-5 sm:grid-cols-2">
@@ -168,6 +172,18 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
               id="job-start"
               type="datetime-local"
               name="scheduledStart"
+              value={start}
+              onChange={(event) => {
+                const value = event.target.value
+                setStart(value)
+
+                if (end && value && end <= value) {
+                  setEnd("")
+                  setScheduleError("End time must be after start time.")
+                } else {
+                  setScheduleError("")
+                }
+              }}
               className={inputClass}
             />
           </div>
@@ -183,6 +199,20 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
               id="job-end"
               type="datetime-local"
               name="scheduledEnd"
+              value={end}
+              min={start || undefined}
+              onChange={(event) => {
+                const value = event.target.value
+
+                if (start && value && value <= start) {
+                  setEnd("")
+                  setScheduleError("End time must be after start time.")
+                  return
+                }
+
+                setEnd(value)
+                setScheduleError("")
+              }}
               className={inputClass}
             />
           </div>
