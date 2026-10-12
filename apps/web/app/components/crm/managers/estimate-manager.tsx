@@ -70,27 +70,33 @@ export function EstimateManager({ slug, estimate }: Props) {
     })
   }
   function saveNotes() {
-    setError("")
-
     startTransition(async () => {
       try {
         await updateEstimateNotes(slug, estimate.id, notes)
-      } catch {
-        setError("Unable to save notes.")
+
+        toast.success("Estimate notes saved successfully.")
+        router.refresh()
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Unable to save estimate notes.",
+        )
       }
     })
   }
-
   function removeEstimate() {
     setError("")
 
     startTransition(async () => {
       try {
         await deleteEstimate(slug, estimate.id)
-        router.push(`/org/${slug}/estimates`)
-        router.refresh()
       } catch (error) {
-        setError(
+        if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
+          throw error
+        }
+
+        toast.error(
           error instanceof Error ? error.message : "Unable to delete estimate.",
         )
       }
@@ -207,7 +213,7 @@ export function EstimateManager({ slug, estimate }: Props) {
         title="Delete estimate?"
         description="This will permanently delete the estimate and its services. This action cannot be undone."
         pending={pending}
-        error={error}
+        error={""}
         onCancel={() => {
           setConfirmDelete(false)
           setError("")

@@ -1,7 +1,7 @@
 import { Sidebar } from "@/app/components/crm/sidebar"
+import { CRMToaster } from "@/app/components/crm/ui/crm-toaster"
 import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
-import { Toaster } from "sonner"
 
 export default async function OrganizationLayout({
   children,
@@ -45,13 +45,7 @@ export default async function OrganizationLayout({
         <div className="mx-auto w-full max-w-7xl">{children}</div>
       </main>
 
-      <Toaster
-        position="top-right"
-        richColors
-        closeButton
-        duration={4000}
-        theme="system"
-      />
+      <CRMToaster />
     </div>
   )
 }

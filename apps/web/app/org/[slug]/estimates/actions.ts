@@ -175,7 +175,7 @@ export async function deleteEstimate(slug: string, estimateId: string) {
   }
 
   revalidatePath(`/org/${slug}/estimates`)
-  redirect(`/org/${slug}/estimates`)
+  redirect(`/org/${slug}/estimates?success=deleted`)
 }
 
 export async function updateEstimateItems(

@@ -2,6 +2,8 @@ import Link from "next/link"
 import { getOrganization } from "@/lib/organizations"
 import { createClient } from "@/app/lib/supabase/server"
 import { EstimateForm } from "@/app/components/crm/forms/estimate-form"
+import { Suspense } from "react"
+import { RedirectToast } from "@/app/components/crm/ui/redirect-toast"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -14,6 +16,9 @@ function formatMoney(cents: number) {
   }).format(cents / 100)
 }
 
+const estimateMessages = {
+  deleted: "Estimate deleted successfully.",
+}
 export default async function EstimatesPage({ params }: Props) {
   const { slug } = await params
 
@@ -64,6 +69,9 @@ export default async function EstimatesPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
+      <Suspense fallback={null}>
+        <RedirectToast messages={estimateMessages} />
+      </Suspense>
       <header>
         <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
           Sales management

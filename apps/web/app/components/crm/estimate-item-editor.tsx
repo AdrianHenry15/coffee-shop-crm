@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react"
 import { updateEstimateItems } from "@/app/org/[slug]/estimates/actions"
 import type { EstimateStatus } from "./managers/estimate-manager"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 type Item = {
   description: string
@@ -32,6 +34,7 @@ export function EstimateItemEditor({
   initialItems,
   status,
 }: Props) {
+  const router = useRouter()
   const [items, setItems] = useState<Item[]>(initialItems)
   const [prices, setPrices] = useState<string[]>(
     initialItems.map((item) =>
@@ -39,8 +42,6 @@ export function EstimateItemEditor({
     ),
   )
   const [pending, startTransition] = useTransition()
-  const [error, setError] = useState("")
-  const [saved, setSaved] = useState(false)
 
   const canEdit = status === "draft"
 
@@ -49,8 +50,6 @@ export function EstimateItemEditor({
     field: keyof Item,
     value: string | number,
   ) {
-    setSaved(false)
-
     setItems((current) =>
       current.map((item, i) =>
         i === index ? { ...item, [field]: value } : item,
@@ -59,7 +58,6 @@ export function EstimateItemEditor({
   }
 
   function addItem() {
-    setSaved(false)
     setPrices((current) => [...current, ""])
 
     setItems((current) => [
@@ -73,22 +71,20 @@ export function EstimateItemEditor({
   }
 
   function removeItem(index: number) {
-    setSaved(false)
     setPrices((current) => current.filter((_, i) => i !== index))
 
     setItems((current) => current.filter((_, i) => i !== index))
   }
 
   function saveItems() {
-    setError("")
-    setSaved(false)
-
     startTransition(async () => {
       try {
         await updateEstimateItems(slug, estimateId, items)
-        setSaved(true)
+
+        toast.success("Estimate updated successfully.")
+        router.refresh()
       } catch (error) {
-        setError(
+        toast.error(
           error instanceof Error ? error.message : "Unable to update estimate.",
         )
       }
@@ -235,18 +231,6 @@ export function EstimateItemEditor({
           {formatMoney(totalCents)}
         </span>
       </div>
-
-      {error && (
-        <p role="alert" className="text-sm text-red-500">
-          {error}
-        </p>
-      )}
-
-      {saved && (
-        <p role="status" className="text-sm text-primary">
-          Estimate updated successfully.
-        </p>
-      )}
 
       {canEdit && (
         <div className="flex justify-end border-t border-border pt-5">
