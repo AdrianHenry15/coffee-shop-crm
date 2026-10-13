@@ -1,13 +1,18 @@
 select
-  n.nspname as schema_name,
-  p.proname as function_name,
-  pg_get_userbyid(p.proowner) as owner,
-  p.prosecdef as security_definer,
-  p.proconfig as configuration,
-  p.proacl as execution_privileges,
-  pg_get_functiondef(p.oid) as definition
-from pg_proc p
-join pg_namespace n
-  on n.oid = p.pronamespace
-where n.nspname = 'public'
-  and p.proname = 'create_organization';
+  tablename,
+  policyname,
+  cmd,
+  roles,
+  qual,
+  with_check
+from pg_policies
+where schemaname = 'public'
+  and tablename in (
+    'organization_members',
+    'customers',
+    'leads',
+    'estimates',
+    'jobs'
+  )
+  and cmd in ('UPDATE', 'ALL')
+order by tablename, policyname;

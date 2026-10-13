@@ -260,6 +260,7 @@ export type Database = {
         Row: {
           completed_at: string | null
           created_at: string
+          creation_request_id: string | null
           customer_id: string
           description: string | null
           estimate_id: string | null
@@ -274,6 +275,7 @@ export type Database = {
         Insert: {
           completed_at?: string | null
           created_at?: string
+          creation_request_id?: string | null
           customer_id: string
           description?: string | null
           estimate_id?: string | null
@@ -288,6 +290,7 @@ export type Database = {
         Update: {
           completed_at?: string | null
           created_at?: string
+          creation_request_id?: string | null
           customer_id?: string
           description?: string | null
           estimate_id?: string | null

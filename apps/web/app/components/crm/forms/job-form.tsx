@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import { createJob } from "@/app/org/[slug]/jobs/actions"
 import { organizationTimeToUTC } from "@/app/lib/dates"
 import { toast } from "sonner"
-import { isRedirectError } from "next/dist/client/components/redirect-error"
+import { useRouter } from "next/navigation"
 
 type Customer = {
   id: string
@@ -26,12 +26,15 @@ type Props = {
 const inputClass =
   "w-full min-w-0 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15"
 export function JobForm({ slug, timezone, customers, estimates }: Props) {
+  const router = useRouter()
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? "")
   const [start, setStart] = useState("")
   const [end, setEnd] = useState("")
   const [scheduleError, setScheduleError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const submittingRef = useRef(false)
+  const requestIdRef = useRef<string | null>(null)
+  const requestPayloadRef = useRef<string | null>(null)
 
   const availableEstimates = estimates.filter(
     (estimate) => estimate.customer_id === customerId,
@@ -41,6 +44,8 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
     event.preventDefault()
 
     if (submittingRef.current) return
+
+    const form = event.currentTarget
 
     setScheduleError("")
 
@@ -65,17 +70,45 @@ export function JobForm({ slug, timezone, customers, estimates }: Props) {
     submittingRef.current = true
     setIsSubmitting(true)
 
+    const requestPayload = JSON.stringify({
+      customerId: formData.get("customerId"),
+      estimateId: formData.get("estimateId"),
+      title: formData.get("title"),
+      description: formData.get("description"),
+      scheduledStart: formData.get("scheduledStart"),
+      scheduledEnd: formData.get("scheduledEnd"),
+    })
+
+    if (requestPayloadRef.current !== requestPayload) {
+      requestIdRef.current = crypto.randomUUID()
+      requestPayloadRef.current = requestPayload
+    }
+
+    formData.set("creationRequestId", requestIdRef.current!)
+
     try {
-      await createJob(formData)
-    } catch (error) {
-      if (isRedirectError(error)) {
-        throw error
+      const result = await createJob(formData)
+
+      if (!result.success) {
+        throw new Error("Failed to create job.")
       }
 
+      toast.success("Job created successfully.")
+
+      form.reset()
+      setStart("")
+      setEnd("")
+      setScheduleError("")
+
+      requestIdRef.current = null
+      requestPayloadRef.current = null
+
+      router.refresh()
+    } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to create job.",
       )
-
+    } finally {
       submittingRef.current = false
       setIsSubmitting(false)
     }

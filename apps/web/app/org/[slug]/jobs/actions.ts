@@ -12,6 +12,7 @@ export async function createJob(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim()
   const start = String(formData.get("scheduledStart") ?? "")
   const end = String(formData.get("scheduledEnd") ?? "")
+  const creationRequestId = String(formData.get("creationRequestId") ?? "")
 
   if (!title || title.length > 200) {
     throw new Error("Job title must be 1–200 characters.")
@@ -42,6 +43,14 @@ export async function createJob(formData: FormData) {
     Date.parse(scheduledEnd) <= Date.parse(scheduledStart)
   ) {
     throw new Error("End time must be after start time.")
+  }
+
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      creationRequestId,
+    )
+  ) {
+    throw new Error("Invalid job creation request.")
   }
 
   const supabase = await createClient()
@@ -95,6 +104,7 @@ export async function createJob(formData: FormData) {
     organization_id: organization.id,
     customer_id: customer.id,
     estimate_id: estimateId || null,
+    creation_request_id: creationRequestId,
     title,
     description: description || null,
     scheduled_start: scheduledStart,
@@ -103,11 +113,45 @@ export async function createJob(formData: FormData) {
   })
 
   if (error) {
+    if (error.code === "23505") {
+      const { data: existingJob, error: lookupError } = await supabase
+        .from("jobs")
+        .select(
+          "id, customer_id, estimate_id, title, description, scheduled_start, scheduled_end",
+        )
+        .eq("organization_id", organization.id)
+        .eq("creation_request_id", creationRequestId)
+        .maybeSingle()
+
+      if (lookupError) {
+        throw new Error(lookupError.message)
+      }
+
+      if (existingJob) {
+        const sameRequest =
+          existingJob.customer_id === customerId &&
+          existingJob.estimate_id === (estimateId || null) &&
+          existingJob.title === title &&
+          existingJob.description === (description || null) &&
+          existingJob.scheduled_start === scheduledStart &&
+          existingJob.scheduled_end === scheduledEnd
+
+        if (!sameRequest) {
+          throw new Error(
+            "This request ID was already used for a different job.",
+          )
+        }
+
+        revalidatePath(`/org/${slug}/jobs`)
+        return { success: true }
+      }
+    }
+
     throw new Error(error.message)
   }
 
   revalidatePath(`/org/${slug}/jobs`)
-  redirect(`/org/${slug}/jobs?success=created`)
+  return { success: true }
 }
 
 type JobStatus = "scheduled" | "in_progress" | "completed" | "canceled"
