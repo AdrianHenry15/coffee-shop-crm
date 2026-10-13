@@ -449,6 +449,10 @@ export type Database = {
           organization_id: string
           plan_id: string
           status: string
+          stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string | null
+          stripe_subscription_status: string | null
           updated_at: string
         }
         Insert: {
@@ -456,6 +460,10 @@ export type Database = {
           organization_id: string
           plan_id?: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -463,6 +471,10 @@ export type Database = {
           organization_id?: string
           plan_id?: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -604,11 +616,75 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_checkout_reservations: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          plan_id: string
+          status: string
+          stripe_session_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          plan_id: string
+          status?: string
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          plan_id?: string
+          status?: string
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_checkout_reservations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stripe_checkout_reservations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "billing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      associate_stripe_customer: {
+        Args: { customer_id: string; org_id: string }
+        Returns: string
+      }
+      complete_stripe_checkout: {
+        Args: {
+          p_customer_id: string
+          p_plan_id: string
+          p_price_id: string
+          p_reservation_id: string
+          p_session_id: string
+          p_status: string
+          p_subscription_id: string
+        }
+        Returns: undefined
+      }
       convert_lead_to_customer: { Args: { lead_uuid: string }; Returns: string }
       create_estimate: {
         Args: {
@@ -678,6 +754,16 @@ export type Database = {
       }
       set_organization_maintenance: {
         Args: { ends_at: string; org_uuid: string; starts_at: string }
+        Returns: undefined
+      }
+      sync_stripe_subscription: {
+        Args: {
+          p_customer_id: string
+          p_plan_id: string
+          p_price_id: string
+          p_status: string
+          p_subscription_id: string
+        }
         Returns: undefined
       }
       update_estimate_items: {
