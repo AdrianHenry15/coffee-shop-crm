@@ -3,6 +3,8 @@ import { stripe } from "@/app/lib/stripe/server"
 import { createAdminClient } from "@/app/lib/supabase/admin"
 import { STRIPE_PLANS } from "@/app/lib/stripe/plans"
 import { syncStripeSubscription } from "@/app/lib/stripe/sync-subscription"
+import { verifyAndCompleteUpgrade } from "@/app/lib/stripe/verify-upgrade"
+import { recoverUpgrade } from "@/app/lib/stripe/recover-upgrade"
 
 export const runtime = "nodejs"
 
@@ -224,7 +226,6 @@ export async function POST(request: Request) {
 
         const admin = createAdminClient()
 
-        // Only process subscriptions already tracked by CoffeeShopCRM.
         const { data: trackedSubscription, error: lookupError } = await admin
           .from("organization_subscriptions")
           .select("organization_id")
@@ -233,24 +234,32 @@ export async function POST(request: Request) {
           .maybeSingle()
 
         if (lookupError) {
-          throw new Error(
-            `Unable to verify tracked subscription: ${lookupError.message}`,
-          )
+          throw lookupError
         }
 
         if (!trackedSubscription) {
-          // Ignore unrelated or superseded Stripe subscriptions.
           break
         }
 
-        // Fetch Stripe's latest state and update CRM entitlements.
         await syncStripeSubscription(subscription.id)
+
+        if (event.type === "customer.subscription.updated") {
+          await recoverUpgrade(subscription.id)
+        }
 
         break
       }
 
       case "invoice.payment_failed": {
         console.info("Stripe invoice payment failed:", event.id)
+
+        break
+      }
+
+      case "invoice.paid": {
+        const invoice = event.data.object
+
+        await verifyAndCompleteUpgrade(invoice.id)
 
         break
       }

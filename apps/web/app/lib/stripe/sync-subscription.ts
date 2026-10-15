@@ -5,7 +5,6 @@ import { stripe } from "@/app/lib/stripe/server"
 import { STRIPE_PLANS } from "@/app/lib/stripe/plans"
 
 export async function syncStripeSubscription(subscriptionId: string) {
-  // Always retrieve the latest state from Stripe.
   const subscription = await stripe.subscriptions.retrieve(subscriptionId)
 
   const customerId =
@@ -28,7 +27,6 @@ export async function syncStripeSubscription(subscriptionId: string) {
 
   const admin = createAdminClient()
 
-  // Only synchronize subscriptions already linked to an organization.
   const { data: tracked, error: lookupError } = await admin
     .from("organization_subscriptions")
     .select("organization_id")
@@ -37,12 +35,52 @@ export async function syncStripeSubscription(subscriptionId: string) {
     .maybeSingle()
 
   if (lookupError) {
-    throw new Error(
-      `Unable to verify Stripe subscription: ${lookupError.message}`,
-    )
+    throw lookupError
   }
 
   if (!tracked) {
+    return
+  }
+
+  const { data: pendingChange, error: changeError } = await admin
+    .from("stripe_subscription_changes")
+    .select("id, change_type, status")
+    .eq("organization_id", tracked.organization_id)
+    .eq("stripe_subscription_id", subscription.id)
+    .in("status", ["pending", "awaiting_payment", "scheduled"])
+    .maybeSingle()
+
+  if (changeError) {
+    throw changeError
+  }
+
+  const isTerminal =
+    subscription.status === "canceled" ||
+    subscription.status === "incomplete_expired"
+
+  // A canceled subscription must always reach the database.
+  // PostgreSQL will revoke paid entitlements and close
+  // any outstanding plan-change request.
+  if (isTerminal) {
+    const { error } = await admin.rpc("sync_stripe_subscription", {
+      p_customer_id: customerId,
+      p_subscription_id: subscription.id,
+      p_price_id: priceId,
+      p_plan_id: plan,
+      p_status: subscription.status,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    return
+  }
+
+  // Never activate an upgrade or execute a downgrade
+  // through ordinary synchronization while the
+  // dedicated plan-change workflow is unresolved.
+  if (pendingChange) {
     return
   }
 
@@ -55,6 +93,6 @@ export async function syncStripeSubscription(subscriptionId: string) {
   })
 
   if (error) {
-    throw new Error(`Stripe synchronization failed: ${error.message}`)
+    throw error
   }
 }

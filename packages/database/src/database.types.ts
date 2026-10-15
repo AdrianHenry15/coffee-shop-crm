@@ -664,6 +664,59 @@ export type Database = {
           },
         ]
       }
+      stripe_subscription_changes: {
+        Row: {
+          change_type: string
+          created_at: string
+          effective_at: string | null
+          from_plan_id: string
+          id: string
+          organization_id: string
+          status: string
+          stripe_invoice_id: string | null
+          stripe_schedule_id: string | null
+          stripe_subscription_id: string
+          to_plan_id: string
+          updated_at: string
+        }
+        Insert: {
+          change_type: string
+          created_at?: string
+          effective_at?: string | null
+          from_plan_id: string
+          id?: string
+          organization_id: string
+          status?: string
+          stripe_invoice_id?: string | null
+          stripe_schedule_id?: string | null
+          stripe_subscription_id: string
+          to_plan_id: string
+          updated_at?: string
+        }
+        Update: {
+          change_type?: string
+          created_at?: string
+          effective_at?: string | null
+          from_plan_id?: string
+          id?: string
+          organization_id?: string
+          status?: string
+          stripe_invoice_id?: string | null
+          stripe_schedule_id?: string | null
+          stripe_subscription_id?: string
+          to_plan_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_subscription_changes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -681,6 +734,16 @@ export type Database = {
           p_reservation_id: string
           p_session_id: string
           p_status: string
+          p_subscription_id: string
+        }
+        Returns: undefined
+      }
+      complete_stripe_subscription_upgrade: {
+        Args: {
+          p_change_id: string
+          p_customer_id: string
+          p_invoice_id: string
+          p_price_id: string
           p_subscription_id: string
         }
         Returns: undefined

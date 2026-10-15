@@ -3,6 +3,7 @@ import { createAdminClient } from "@/app/lib/supabase/admin"
 import { getOrganization } from "@/lib/organizations"
 import { createCheckoutSession } from "./actions"
 import { createBillingPortalSession } from "./portal-actions"
+import { UpgradeButton } from "./upgrade-button"
 
 type BillingPageProps = {
   params: Promise<{ slug: string }>
@@ -112,6 +113,10 @@ export default async function BillingPage({ params }: BillingPageProps) {
             </span>
           </div>
         </div>
+
+        {subscription.plan_id === "starter" && (
+          <UpgradeButton slug={slug} enabled={false} />
+        )}
 
         {hasStripeCustomer && (
           <div className="mt-6 border-t border-gray-100 pt-6">
