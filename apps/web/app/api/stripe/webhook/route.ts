@@ -251,8 +251,21 @@ export async function POST(request: Request) {
       }
 
       case "invoice.payment_failed": {
-        console.info("Stripe invoice payment failed:", event.id)
+        const eventInvoice = event.data.object
+        const invoice = await stripe.invoices.retrieve(eventInvoice.id)
+        const linkedSubscription =
+          invoice.parent?.subscription_details?.subscription
 
+        const subscriptionId =
+          typeof linkedSubscription === "string"
+            ? linkedSubscription
+            : linkedSubscription?.id
+
+        if (subscriptionId) {
+          await syncStripeSubscription(subscriptionId)
+        }
+
+        console.info("Stripe invoice payment failed:", event.id)
         break
       }
 

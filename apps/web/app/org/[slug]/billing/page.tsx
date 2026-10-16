@@ -5,6 +5,7 @@ import { createCheckoutSession } from "./actions"
 import { createBillingPortalSession } from "./portal-actions"
 import { UpgradeButton } from "./upgrade-button"
 import { RecoverCheckoutButton } from "./recover-checkout-button"
+import { stripe } from "@/app/lib/stripe/server"
 
 type BillingPageProps = {
   params: Promise<{ slug: string }>
@@ -59,13 +60,23 @@ export default async function BillingPage({ params }: BillingPageProps) {
 
   const { data: subscription, error } = await admin
     .from("organization_subscriptions")
-    .select("plan_id, status, stripe_customer_id, stripe_subscription_status")
+    .select(
+      "plan_id, status, stripe_customer_id, stripe_subscription_id, stripe_subscription_status",
+    )
     .eq("organization_id", organization.id)
     .single()
 
   if (error || !subscription) {
     return <p>Unable to load billing information.</p>
   }
+
+  const { data: pendingCheckout } = await admin
+    .from("stripe_checkout_reservations")
+    .select("id, stripe_session_id")
+    .eq("organization_id", organization.id)
+    .eq("status", "pending")
+    .not("stripe_session_id", "is", null)
+    .maybeSingle()
 
   const planId =
     subscription.plan_id === "starter" || subscription.plan_id === "pro"
@@ -78,6 +89,82 @@ export default async function BillingPage({ params }: BillingPageProps) {
 
   const subscriptionStatus =
     subscription.stripe_subscription_status ?? "Not subscribed"
+
+  const stripeStatus = subscription.stripe_subscription_status
+
+  const hasUnresolvedStripeSubscription = [
+    "active",
+    "trialing",
+    "past_due",
+    "unpaid",
+    "incomplete",
+    "paused",
+  ].includes(stripeStatus ?? "")
+
+  const isTerminalStripeStatus = ["canceled", "incomplete_expired"].includes(
+    stripeStatus ?? "",
+  )
+
+  const canStartCheckout =
+    isFree &&
+    !hasUnresolvedStripeSubscription &&
+    (!subscription.stripe_subscription_id || isTerminalStripeStatus)
+
+  let cancellationLabel: string | null = null
+  let cancellationScheduled = false
+  let cancellationStatusChecked = false
+
+  if (subscription.stripe_subscription_id && !isFree) {
+    try {
+      const liveSubscription = await stripe.subscriptions.retrieve(
+        subscription.stripe_subscription_id,
+      )
+
+      cancellationStatusChecked = true
+      cancellationScheduled =
+        liveSubscription.cancel_at_period_end ||
+        Boolean(liveSubscription.cancel_at)
+
+      if (cancellationScheduled) {
+        cancellationLabel = liveSubscription.cancel_at
+          ? `Cancels on ${new Date(
+              liveSubscription.cancel_at * 1000,
+            ).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}`
+          : "Cancels at period end"
+      }
+    } catch (error) {
+      console.error("Unable to retrieve Stripe cancellation status:", error)
+    }
+  }
+
+  const canUpgradeToPro =
+    planId === "starter" &&
+    stripeStatus === "active" &&
+    !cancellationLabel &&
+    Boolean(
+      subscription.stripe_subscription_id && subscription.stripe_customer_id,
+    ) &&
+    cancellationStatusChecked &&
+    !cancellationScheduled
+
+  let canRecoverCheckout = false
+
+  if (pendingCheckout?.stripe_session_id) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(
+        pendingCheckout.stripe_session_id,
+      )
+
+      canRecoverCheckout =
+        session.status === "complete" && session.payment_status === "paid"
+    } catch (error) {
+      console.error("Unable to check pending Checkout:", error)
+    }
+  }
 
   return (
     <main className="mx-auto max-w-5xl space-y-8 p-6">
@@ -110,29 +197,24 @@ export default async function BillingPage({ params }: BillingPageProps) {
             </p>
 
             <span className="mt-2 inline-block rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-800">
-              {isFree ? "Free plan" : subscriptionStatus}
+              {isFree && hasUnresolvedStripeSubscription
+                ? "Subscription sync needed"
+                : isFree
+                  ? "Free plan"
+                  : (cancellationLabel ?? subscriptionStatus)}
             </span>
           </div>
         </div>
 
-        {slug === "company-bumpany" && isFree && hasStripeCustomer && (
+        {isFree && hasStripeCustomer && canRecoverCheckout && (
           <div className="mt-6 border-t border-gray-100 pt-6">
             <p className="mb-3 text-sm text-gray-600">
-              Recover the Starter payment that completed before Stripe webhooks
-              were listening.
+              Recover a completed Checkout that has not synced yet.
             </p>
 
             <RecoverCheckoutButton slug={slug} />
           </div>
         )}
-
-        <UpgradeButton
-          slug={slug}
-          enabled={
-            process.env.NODE_ENV === "development" &&
-            slug === "upgrade-recovery-test"
-          }
-        />
 
         {hasStripeCustomer && (
           <div className="mt-6 border-t border-gray-100 pt-6">
@@ -152,7 +234,35 @@ export default async function BillingPage({ params }: BillingPageProps) {
         )}
       </section>
 
-      {isFree && (
+      {canUpgradeToPro && (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Upgrade your plan</h2>
+            <p className="text-sm text-gray-500">
+              Upgrade from Starter to Pro.
+            </p>
+          </div>
+
+          <div className="max-w-md rounded-2xl border border-green-800 bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold">Pro</h3>
+
+            <p className="mt-3 text-3xl font-semibold">
+              $59
+              <span className="text-sm font-normal text-gray-500">/month</span>
+            </p>
+
+            <p className="mt-3 text-sm text-gray-500">
+              Advanced tools for growing businesses.
+            </p>
+
+            <div className="mt-6">
+              <UpgradeButton slug={slug} enabled={canUpgradeToPro} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {canStartCheckout && (
         <section className="space-y-4">
           <div>
             <h2 className="text-xl font-semibold">Upgrade your plan</h2>

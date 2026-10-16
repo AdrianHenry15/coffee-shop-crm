@@ -85,8 +85,6 @@ export async function upgradeToPro(slug: string) {
       throw new Error("Pending upgrade subscription mismatch")
     }
 
-    // Recheck the existing request. This never creates
-    // another Stripe subscription update.
     const recovery = await recoverUpgrade(existingChange.stripe_subscription_id)
 
     if (recovery.status === "manual_review") {
@@ -123,6 +121,12 @@ export async function upgradeToPro(slug: string) {
   const subscription = await stripe.subscriptions.retrieve(
     billing.stripe_subscription_id,
   )
+
+  if (subscription.cancel_at_period_end || subscription.cancel_at) {
+    throw new Error(
+      "This subscription is scheduled to cancel. Resume it in Manage Billing before upgrading.",
+    )
+  }
 
   const customerId =
     typeof subscription.customer === "string"
@@ -201,6 +205,7 @@ export async function upgradeToPro(slug: string) {
         coffeeshop_organization_id: organization.id,
       },
     })
+
     if (
       process.env.NODE_ENV === "development" &&
       process.env.TEST_UPGRADE_INTERRUPTION === "true"
@@ -229,10 +234,8 @@ export async function upgradeToPro(slug: string) {
       throw new Error("Unable to associate upgrade invoice")
     }
 
-    // Verify the invoice and activate Pro if payment succeeded.
     await verifyAndCompleteUpgrade(latestInvoice.id)
 
-    // Retrieve the current payment state from Stripe.
     const payment = await getUpgradePayment(change.id)
 
     return {
@@ -245,9 +248,6 @@ export async function upgradeToPro(slug: string) {
   } catch (error) {
     console.error("Stripe upgrade request failed:", error)
 
-    // An ambiguous failure may have created a Stripe
-    // update or invoice. Preserve the pending change
-    // until reconciliation determines what happened.
     throw new Error("Upgrade is pending verification. Please contact support.")
   }
 }

@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-
 import { upgradeToPro } from "./upgrade-actions"
 
 type UpgradeButtonProps = {

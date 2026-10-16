@@ -75,12 +75,13 @@ export async function verifyAndCompleteUpgrade(invoiceId: string) {
 
   // Stripe's newer API versions represent the invoice's
   // subscription under parent.subscription_details.
-  const subscriptionDetails = invoice.parent?.subscription_details
+
+  const parentSubscription = invoice.parent?.subscription_details?.subscription
 
   const invoiceSubscriptionId =
-    typeof subscriptionDetails?.subscription === "string"
-      ? subscriptionDetails.subscription
-      : subscriptionDetails?.subscription?.id
+    typeof parentSubscription === "string"
+      ? parentSubscription
+      : parentSubscription?.id
 
   if (invoiceSubscriptionId !== change.stripe_subscription_id) {
     throw new Error(

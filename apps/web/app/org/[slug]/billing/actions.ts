@@ -60,7 +60,10 @@ export async function createCheckoutSession(slug: string, plan: PaidPlan) {
       subscription.stripe_subscription_id,
     )
 
-    if (existing.status !== "canceled") {
+    if (
+      existing.status !== "canceled" &&
+      existing.status !== "incomplete_expired"
+    ) {
       throw new Error(
         "An existing subscription must be managed through billing",
       )
@@ -132,7 +135,7 @@ export async function createCheckoutSession(slug: string, plan: PaidPlan) {
   // Check for an existing pending Checkout reservation.
   const { data: pending, error: pendingError } = await admin
     .from("stripe_checkout_reservations")
-    .select("id, stripe_session_id, created_at")
+    .select("id, plan_id, stripe_session_id, created_at")
     .eq("organization_id", organization.id)
     .eq("status", "pending")
     .maybeSingle()
@@ -148,12 +151,34 @@ export async function createCheckoutSession(slug: string, plan: PaidPlan) {
       )
 
       if (existingSession.status === "open") {
-        // Reuse the existing Checkout session instead of creating another.
-        if (!existingSession.url) {
-          throw new Error("Existing Checkout URL unavailable")
+        if (pending.plan_id === plan) {
+          if (!existingSession.url) {
+            throw new Error("Existing Checkout URL unavailable")
+          }
+
+          // Reuse the session only when it matches the selected plan.
+          redirect(existingSession.url)
         }
 
-        redirect(existingSession.url)
+        // The user selected a different plan. Expire this open
+        // session and release its reservation before creating another.
+        await stripe.checkout.sessions.expire(existingSession.id)
+
+        const { data: released, error: releaseError } = await admin
+          .from("stripe_checkout_reservations")
+          .update({
+            status: "expired",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", pending.id)
+          .eq("status", "pending")
+          .eq("stripe_session_id", existingSession.id)
+          .select("id")
+          .single()
+
+        if (releaseError || !released) {
+          throw new Error("Unable to replace the pending Checkout session")
+        }
       }
 
       if (existingSession.status === "complete") {
