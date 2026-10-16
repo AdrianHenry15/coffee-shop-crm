@@ -1,6 +1,8 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 import Image from "next/image"
+import { redirect } from "next/navigation"
+import { createClient } from "@/app/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "CoffeeShopCRM | Run your business, simply",
@@ -55,7 +57,16 @@ const plans = [
   },
 ]
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    redirect("/dashboard")
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
