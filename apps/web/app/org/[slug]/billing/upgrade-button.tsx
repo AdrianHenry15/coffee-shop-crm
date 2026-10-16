@@ -52,7 +52,7 @@ export function UpgradeButton({ slug, enabled = false }: UpgradeButtonProps) {
       <button
         type="button"
         onClick={handleUpgrade}
-        disabled={!enabled || loading}
+        disabled={!enabled || loading || pending || Boolean(paymentUrl)}
         className="rounded-lg bg-emerald-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">
         {loading ? "Processing..." : "Upgrade to Pro"}
       </button>
@@ -90,6 +90,15 @@ export function UpgradeButton({ slug, enabled = false }: UpgradeButtonProps) {
           Your upgrade is pending confirmation. Your current Starter plan
           remains active until payment is verified.
         </p>
+      )}
+
+      {(pending || paymentUrl) && (
+        <button
+          type="button"
+          onClick={() => router.refresh()}
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          Refresh billing status
+        </button>
       )}
     </div>
   )

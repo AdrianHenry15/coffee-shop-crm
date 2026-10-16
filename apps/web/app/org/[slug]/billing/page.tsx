@@ -4,6 +4,7 @@ import { getOrganization } from "@/lib/organizations"
 import { createCheckoutSession } from "./actions"
 import { createBillingPortalSession } from "./portal-actions"
 import { UpgradeButton } from "./upgrade-button"
+import { RecoverCheckoutButton } from "./recover-checkout-button"
 
 type BillingPageProps = {
   params: Promise<{ slug: string }>
@@ -114,9 +115,24 @@ export default async function BillingPage({ params }: BillingPageProps) {
           </div>
         </div>
 
-        {subscription.plan_id === "starter" && (
-          <UpgradeButton slug={slug} enabled={false} />
+        {slug === "company-bumpany" && isFree && hasStripeCustomer && (
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <p className="mb-3 text-sm text-gray-600">
+              Recover the Starter payment that completed before Stripe webhooks
+              were listening.
+            </p>
+
+            <RecoverCheckoutButton slug={slug} />
+          </div>
         )}
+
+        <UpgradeButton
+          slug={slug}
+          enabled={
+            process.env.NODE_ENV === "development" &&
+            slug === "upgrade-recovery-test"
+          }
+        />
 
         {hasStripeCustomer && (
           <div className="mt-6 border-t border-gray-100 pt-6">

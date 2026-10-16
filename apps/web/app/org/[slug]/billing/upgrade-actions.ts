@@ -174,6 +174,10 @@ export async function upgradeToPro(slug: string) {
         ],
         payment_behavior: "pending_if_incomplete",
         proration_behavior: "always_invoice",
+        metadata: {
+          ...subscription.metadata,
+          coffeeshop_upgrade_change_id: change.id,
+        },
         expand: ["latest_invoice"],
       },
       {
@@ -189,6 +193,24 @@ export async function upgradeToPro(slug: string) {
 
     if (latestInvoice.billing_reason !== "subscription_update") {
       throw new Error("Unexpected invoice type for subscription upgrade")
+    }
+
+    await stripe.invoices.update(latestInvoice.id, {
+      metadata: {
+        coffeeshop_upgrade_change_id: change.id,
+        coffeeshop_organization_id: organization.id,
+      },
+    })
+    if (
+      process.env.NODE_ENV === "development" &&
+      process.env.TEST_UPGRADE_INTERRUPTION === "true"
+    ) {
+      console.warn("[TEST] Simulating interrupted upgrade", {
+        changeId: change.id,
+        invoiceId: latestInvoice.id,
+      })
+
+      throw new Error("Simulated interruption before invoice association")
     }
 
     const { data: updatedChange, error: updateError } = await admin

@@ -26,9 +26,7 @@ export async function recoverUpgrade(
     .in("status", ["pending", "awaiting_payment"])
     .maybeSingle()
 
-  if (changeError) {
-    throw changeError
-  }
+  if (changeError) throw changeError
 
   if (!change) {
     return { status: "not_found" }
@@ -62,28 +60,78 @@ export async function recoverUpgrade(
     throw new Error("Stripe customer mismatch")
   }
 
-  if (!change.stripe_invoice_id) {
-    // Do not guess which invoice belongs to this request.
-    return { status: "manual_review" }
+  let invoiceId = change.stripe_invoice_id
+
+  if (!invoiceId) {
+    const invoices = await stripe.invoices.list({
+      customer: billing.stripe_customer_id,
+      limit: 100,
+    })
+
+    const matches = invoices.data.filter((invoice) => {
+      const invoiceSubscription =
+        invoice.parent?.subscription_details?.subscription
+
+      const invoiceSubscriptionId =
+        typeof invoiceSubscription === "string"
+          ? invoiceSubscription
+          : invoiceSubscription?.id
+
+      return (
+        invoice.metadata?.coffeeshop_upgrade_change_id === change.id &&
+        invoice.metadata?.coffeeshop_organization_id ===
+          change.organization_id &&
+        (typeof invoice.customer === "string"
+          ? invoice.customer
+          : invoice.customer?.id) === billing.stripe_customer_id &&
+        invoice.billing_reason === "subscription_update" &&
+        invoiceSubscriptionId === subscriptionId
+      )
+    })
+
+    if (matches.length !== 1) {
+      return { status: "manual_review" }
+    }
+
+    invoiceId = matches[0].id
+
+    const { data: updated, error: updateError } = await admin
+      .from("stripe_subscription_changes")
+      .update({
+        stripe_invoice_id: invoiceId,
+        status: "awaiting_payment",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", change.id)
+      .eq("status", "pending")
+      .is("stripe_invoice_id", null)
+      .select("id")
+      .maybeSingle()
+
+    if (updateError) throw updateError
+
+    if (!updated) {
+      return { status: "manual_review" }
+    }
   }
 
-  await verifyAndCompleteUpgrade(change.stripe_invoice_id)
+  await verifyAndCompleteUpgrade(invoiceId)
 
-  const { data: updatedChange, error: refreshError } = await admin
+  const { data: refreshed, error: refreshError } = await admin
     .from("stripe_subscription_changes")
     .select("status")
     .eq("id", change.id)
     .single()
 
-  if (refreshError || !updatedChange) {
+  if (refreshError || !refreshed) {
     throw new Error("Unable to refresh upgrade status")
   }
 
-  if (updatedChange.status === "completed") {
+  if (refreshed.status === "completed") {
     return { status: "completed" }
   }
 
-  if (updatedChange.status === "awaiting_payment") {
+  if (refreshed.status === "awaiting_payment") {
     return { status: "awaiting_payment" }
   }
 
