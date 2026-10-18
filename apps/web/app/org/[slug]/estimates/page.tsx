@@ -28,7 +28,7 @@ export default async function EstimatesPage({ params }: Props) {
   const [customersResult, estimatesResult] = await Promise.all([
     supabase
       .from("customers")
-      .select("id, name")
+      .select("id, name, deleted_at")
       .eq("organization_id", organization.id)
       .order("name"),
 
@@ -60,11 +60,16 @@ export default async function EstimatesPage({ params }: Props) {
     throw new Error("Unable to load estimates.")
   }
 
-  const customers = customersResult.data ?? []
+  const allCustomers = customersResult.data ?? []
+
+  const customers = allCustomers.filter(
+    (customer) => customer.deleted_at === null,
+  )
+
   const estimates = estimatesResult.data ?? []
 
   const customerNames = new Map(
-    customers.map((customer) => [customer.id, customer.name]),
+    allCustomers.map((customer) => [customer.id, customer.name]),
   )
 
   return (
@@ -109,8 +114,9 @@ export default async function EstimatesPage({ params }: Props) {
               No estimates yet
             </p>
 
-            <p className="mt-2 text-sm text-muted">
-              Create your first estimate using the form below.
+            <p className="text-sm text-muted">
+              Add a customer or restore one from Recently Deleted before
+              creating an estimate.
             </p>
           </div>
         ) : (

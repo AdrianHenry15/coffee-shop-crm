@@ -22,7 +22,9 @@ export default async function CustomersPage({
 
   const { data: customers, error } = await supabase
     .from("customers")
-    .select("id, name, email, phone, notes, status, lead_id, created_at")
+    .select(
+      "id, name, email, phone, notes, status, lead_id, created_at, deleted_at",
+    )
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false })
 
@@ -78,7 +80,9 @@ export default async function CustomersPage({
 
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
-              {customers?.length ?? 0} total
+              {customers?.filter((customer) => customer.deleted_at === null)
+                .length ?? 0}{" "}
+              total
             </span>
 
             <CsvImporter

@@ -2,7 +2,10 @@ import Link from "next/link"
 import { getOrganization } from "@/lib/organizations"
 import { createClient } from "@/app/lib/supabase/server"
 import { PipelineOverview } from "@/app/components/crm/pipeline-overview"
-import { Activity, RecentActivity } from "@/app/components/crm/recent-activity"
+import {
+  RecentActivity,
+  type Activity,
+} from "@/app/components/crm/recent-activity"
 import { FirstRunTour } from "@/app/components/crm/first-run-tour"
 
 export default async function OrganizationDashboard({
@@ -30,12 +33,14 @@ export default async function OrganizationDashboard({
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
-      .eq("organization_id", organization.id),
+      .eq("organization_id", organization.id)
+      .is("deleted_at", null),
 
     supabase
       .from("customers")
       .select("id", { count: "exact", head: true })
-      .eq("organization_id", organization.id),
+      .eq("organization_id", organization.id)
+      .is("deleted_at", null),
 
     supabase
       .from("estimates")
@@ -60,15 +65,13 @@ export default async function OrganizationDashboard({
       .limit(5),
   ])
 
-  const results = [
+  for (const result of [
     leadsResult,
     customersResult,
     estimatesResult,
     jobsResult,
     upcomingResult,
-  ]
-
-  for (const result of results) {
+  ]) {
     if (result.error) {
       throw new Error(result.error.message)
     }
@@ -78,6 +81,7 @@ export default async function OrganizationDashboard({
 
   const customerIds = [...new Set(upcomingJobs.map((job) => job.customer_id))]
 
+  // Preserve customer names on existing jobs, including deleted customers.
   const { data: customers, error: customerError } =
     customerIds.length > 0
       ? await supabase
@@ -91,11 +95,16 @@ export default async function OrganizationDashboard({
     throw new Error(customerError.message)
   }
 
+  const customerNames = new Map(
+    (customers ?? []).map((customer) => [customer.id, customer.name]),
+  )
+
   const [leadStatuses, estimateStatuses, jobStatuses] = await Promise.all([
     supabase
       .from("leads")
       .select("status")
-      .eq("organization_id", organization.id),
+      .eq("organization_id", organization.id)
+      .is("deleted_at", null),
 
     supabase
       .from("estimates")
@@ -158,6 +167,7 @@ export default async function OrganizationDashboard({
       .from("leads")
       .select("id, name, created_at")
       .eq("organization_id", organization.id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(8),
 
@@ -165,6 +175,7 @@ export default async function OrganizationDashboard({
       .from("customers")
       .select("id, name, created_at")
       .eq("organization_id", organization.id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(8),
 
@@ -184,8 +195,11 @@ export default async function OrganizationDashboard({
 
     supabase
       .from("customer_activities")
-      .select("id, customer_id, type, content, created_at")
+      .select(
+        "id, customer_id, type, content, created_at, customers!inner(deleted_at)",
+      )
       .eq("organization_id", organization.id)
+      .is("customers.deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(8),
   ])
@@ -259,10 +273,6 @@ export default async function OrganizationDashboard({
     )
     .slice(0, 8)
 
-  const customerNames = new Map(
-    (customers ?? []).map((customer) => [customer.id, customer.name]),
-  )
-
   const stats = [
     {
       label: "Leads",
@@ -289,7 +299,7 @@ export default async function OrganizationDashboard({
   return (
     <div className="space-y-8">
       <FirstRunTour slug={slug} startOpen={query.tour === "welcome"} />
-      {/* Dashboard Header */}
+
       <header>
         <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">
           Workspace / Overview
@@ -304,19 +314,12 @@ export default async function OrganizationDashboard({
         </p>
       </header>
 
-      {/* Statistics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Link
             key={stat.label}
             href={`/org/${slug}/${stat.href}`}
-            className="
-            group rounded-xl border border-border
-            bg-surface p-5 transition-all
-            hover:-translate-y-0.5
-            hover:border-primary/40
-            hover:shadow-sm
-          ">
+            className="group rounded-xl border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
             <p className="text-sm text-muted">{stat.label}</p>
 
             <p className="mt-3 font-mono text-3xl font-semibold tracking-tight text-primary">
@@ -330,20 +333,19 @@ export default async function OrganizationDashboard({
         ))}
       </div>
 
-      {/* Pipeline */}
       <PipelineOverview
         leads={pipeline.leads}
         estimates={pipeline.estimates}
         jobs={pipeline.jobs}
       />
 
-      {/* Upcoming Jobs */}
       <section className="rounded-xl border border-border bg-surface p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-mono text-base font-semibold text-foreground">
               Upcoming Jobs
             </h2>
+
             <p className="mt-1 text-sm text-muted">
               Scheduled for the next seven days
             </p>
@@ -368,13 +370,7 @@ export default async function OrganizationDashboard({
               <Link
                 key={job.id}
                 href={`/org/${slug}/jobs/${job.id}`}
-                className="
-                flex flex-wrap items-center
-                justify-between gap-4
-                rounded-md px-2 py-4
-                transition-colors
-                hover:bg-surface-secondary
-              ">
+                className="flex flex-wrap items-center justify-between gap-4 rounded-md px-2 py-4 transition-colors hover:bg-surface-secondary">
                 <div>
                   <p className="font-medium text-foreground">{job.title}</p>
 
@@ -400,10 +396,8 @@ export default async function OrganizationDashboard({
         )}
       </section>
 
-      {/* Recent Activity */}
       <RecentActivity activities={activities} />
 
-      {/* Quick Actions */}
       <section className="rounded-xl border border-border bg-surface p-5 md:p-6">
         <div>
           <h2 className="font-mono text-base font-semibold text-foreground">
@@ -425,14 +419,7 @@ export default async function OrganizationDashboard({
             <Link
               key={action.path}
               href={`/org/${slug}/${action.path}`}
-              className="
-              rounded-lg border border-border
-              bg-surface-secondary px-4 py-3
-              text-center text-sm font-medium
-              text-foreground transition-colors
-              hover:border-primary/40
-              hover:bg-primary hover:text-primary-foreground
-            ">
+              className="rounded-lg border border-border bg-surface-secondary px-4 py-3 text-center text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary hover:text-primary-foreground">
               {action.label}
             </Link>
           ))}

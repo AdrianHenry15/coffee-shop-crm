@@ -41,10 +41,13 @@ export async function createCustomerActivity(formData: FormData) {
     .select("id")
     .eq("id", customerId)
     .eq("organization_id", organization.id)
+    .is("deleted_at", null)
     .single()
 
   if (customerError || !customer) {
-    throw new Error("Customer not found.")
+    throw new Error(
+      "Customer unavailable. Restore deleted customers before adding activity.",
+    )
   }
 
   const { error } = await supabase.from("customer_activities").insert({

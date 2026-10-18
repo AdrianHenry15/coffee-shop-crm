@@ -17,7 +17,7 @@ export default async function LeadsPage({
 
   const { data: leads, error } = await supabase
     .from("leads")
-    .select("id, name, email, phone, notes, status, created_at")
+    .select("id, name, email, phone, notes, status, created_at, deleted_at")
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false })
 
@@ -92,7 +92,11 @@ export default async function LeadsPage({
 
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
-              {leadsWithCustomers.length} total
+              {
+                leadsWithCustomers.filter((lead) => lead.deleted_at === null)
+                  .length
+              }{" "}
+              total
             </span>
 
             <CsvImporter

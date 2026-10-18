@@ -1,11 +1,8 @@
 "use server"
 
-import {
-  ContactImportResult,
-  MAX_CSV_BYTES,
-  parseContactCsv,
-  validateContactImportRows,
-} from "@/app/lib/crm/csv-import"
+import { changeContactDeletion } from "@/app/lib/crm/contact-deletion"
+import { ContactImportResult } from "@/app/lib/crm/csv-import"
+import { importContactCsv } from "@/app/lib/crm/import-contacts"
 import { createClient } from "@/app/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -135,155 +132,41 @@ export async function updateCustomer(formData: FormData) {
   revalidatePath(`/org/${slug}/customers`)
 }
 
-export async function deleteCustomer(formData: FormData) {
+export async function deleteCustomer(formData: FormData): Promise<void> {
   const slug = String(formData.get("slug") ?? "")
   const id = String(formData.get("id") ?? "")
 
-  const supabase = await createClient()
+  const affected = await changeContactDeletion(slug, [id], "customers", "trash")
 
-  const { data: userData, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !userData.user) {
-    redirect("/login")
+  if (affected === 0) {
+    throw new Error("Customer not found, already deleted, or access denied.")
   }
+}
 
-  const { data: organization, error: orgError } = await supabase
-    .from("organizations")
-    .select("id")
-    .eq("slug", slug)
-    .single()
+export async function trashCustomers(
+  slug: string,
+  ids: string[],
+): Promise<number> {
+  return changeContactDeletion(slug, ids, "customers", "trash")
+}
 
-  if (orgError || !organization) {
-    throw new Error("Organization not found.")
-  }
+export async function restoreCustomers(
+  slug: string,
+  ids: string[],
+): Promise<number> {
+  return changeContactDeletion(slug, ids, "customers", "restore")
+}
 
-  const { data: deleted, error } = await supabase
-    .from("customers")
-    .delete()
-    .eq("id", id)
-    .eq("organization_id", organization.id)
-    .select("id")
-    .single()
-
-  if (error) {
-    console.error("Error deleting customer:", error)
-    throw new Error(error.message)
-  }
-
-  if (!deleted) {
-    throw new Error("Customer not found or access denied.")
-  }
-
-  revalidatePath(`/org/${slug}/customers`)
-  revalidatePath(`/org/${slug}/leads`)
+export async function permanentlyDeleteCustomers(
+  slug: string,
+  ids: string[],
+): Promise<number> {
+  return changeContactDeletion(slug, ids, "customers", "delete")
 }
 
 export async function importCustomers(
   slug: string,
   csvText: string,
 ): Promise<ContactImportResult> {
-  if (typeof csvText !== "string") {
-    return {
-      success: false,
-      imported: 0,
-      skipped: 0,
-      issues: [],
-      message: "Invalid CSV file.",
-    }
-  }
-
-  if (new TextEncoder().encode(csvText).byteLength > MAX_CSV_BYTES) {
-    return {
-      success: false,
-      imported: 0,
-      skipped: 0,
-      issues: [],
-      message: "CSV file is too large.",
-    }
-  }
-
-  let rows
-
-  try {
-    rows = parseContactCsv(csvText)
-  } catch (error) {
-    return {
-      success: false,
-      imported: 0,
-      skipped: 0,
-      issues: [],
-      message: error instanceof Error ? error.message : "Invalid CSV file.",
-    }
-  }
-
-  const supabase = await createClient()
-  const { data: userData, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !userData.user) {
-    redirect("/login")
-  }
-
-  const { data: organization, error: orgError } = await supabase
-    .from("organizations")
-    .select("id")
-    .eq("slug", slug)
-    .single()
-
-  if (orgError || !organization) {
-    return {
-      success: false,
-      imported: 0,
-      skipped: 0,
-      issues: [],
-      message: "Organization not found.",
-    }
-  }
-
-  const { validRows, issues } = validateContactImportRows(rows)
-
-  if (validRows.length === 0) {
-    return {
-      success: false,
-      imported: 0,
-      skipped: issues.length,
-      issues,
-      message: "No valid customers found. Nothing was imported.",
-    }
-  }
-
-  const { error } = await supabase.from("customers").insert(
-    validRows.map((row) => ({
-      organization_id: organization.id,
-      name: row.name,
-      email: row.email || null,
-      phone: row.phone || null,
-      notes: row.notes || null,
-    })),
-  )
-
-  if (error) {
-    console.error("Error importing customers:", error)
-
-    return {
-      success: false,
-      imported: 0,
-      skipped: 0,
-      issues: [],
-      message: "Unable to import customers.",
-    }
-  }
-
-  revalidatePath(`/org/${slug}/customers`)
-  revalidatePath(`/org/${slug}/dashboard`)
-
-  return {
-    success: true,
-    imported: validRows.length,
-    skipped: issues.length,
-    issues,
-    message:
-      issues.length > 0
-        ? `Imported ${validRows.length} customers. Skipped ${issues.length} invalid rows.`
-        : `Imported ${validRows.length} customers.`,
-  }
+  return importContactCsv(slug, csvText, "customers")
 }

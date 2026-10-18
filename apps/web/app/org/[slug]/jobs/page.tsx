@@ -30,7 +30,7 @@ export default async function JobsPage({ params }: Props) {
   const [customersResult, estimatesResult, jobsResult] = await Promise.all([
     supabase
       .from("customers")
-      .select("id, name")
+      .select("id, name, deleted_at")
       .eq("organization_id", organization.id)
       .order("name"),
 
@@ -69,22 +69,30 @@ export default async function JobsPage({ params }: Props) {
     throw new Error(jobsResult.error.message)
   }
 
-  const customers = customersResult.data ?? []
+  const allCustomers = customersResult.data ?? []
+
+  const customers = allCustomers.filter(
+    (customer) => customer.deleted_at === null,
+  )
+
+  const availableCustomerIds = new Set(customers.map((customer) => customer.id))
+
+  const jobs = jobsResult.data ?? []
 
   const usedEstimateIds = new Set(
-    (jobsResult.data ?? [])
+    jobs
       .map((job) => job.estimate_id)
       .filter((id): id is string => id !== null),
   )
 
   const estimates = (estimatesResult.data ?? []).filter(
-    (estimate) => !usedEstimateIds.has(estimate.id),
+    (estimate) =>
+      availableCustomerIds.has(estimate.customer_id) &&
+      !usedEstimateIds.has(estimate.id),
   )
 
-  const jobs = jobsResult.data ?? []
-
   const customerNames = new Map(
-    customers.map((customer) => [customer.id, customer.name]),
+    allCustomers.map((customer) => [customer.id, customer.name]),
   )
 
   const counts = {
@@ -207,12 +215,27 @@ export default async function JobsPage({ params }: Props) {
           </p>
         </div>
 
-        <JobForm
-          slug={slug}
-          timezone={organization.timezone}
-          customers={customers}
-          estimates={estimates}
-        />
+        {customers.length > 0 ? (
+          <JobForm
+            slug={slug}
+            timezone={organization.timezone}
+            customers={customers}
+            estimates={estimates}
+          />
+        ) : (
+          <div className="rounded-lg border border-dashed border-border bg-surface-secondary p-6">
+            <p className="text-sm text-muted">
+              Add a customer or restore one from Recently Deleted before
+              creating a job.
+            </p>
+
+            <Link
+              href={`/org/${slug}/customers`}
+              className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">
+              Go to customers →
+            </Link>
+          </div>
+        )}
       </section>
 
       <div className="flex justify-end">

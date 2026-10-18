@@ -27,7 +27,7 @@ export default async function CustomerDetailsPage({ params }: Props) {
 
   const { data: customer, error } = await supabase
     .from("customers")
-    .select("id, name, email, phone, notes, status, created_at")
+    .select("id, name, email, phone, notes, status, created_at, deleted_at")
     .eq("id", id)
     .eq("organization_id", organization.id)
     .single()
@@ -35,6 +35,8 @@ export default async function CustomerDetailsPage({ params }: Props) {
   if (error || !customer) {
     notFound()
   }
+
+  const isDeleted = customer.deleted_at !== null
 
   const [estimatesResult, jobsResult, activitiesResult] = await Promise.all([
     supabase
@@ -85,8 +87,8 @@ export default async function CustomerDetailsPage({ params }: Props) {
             {customer.name}
           </h1>
 
-          <span className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-medium capitalize text-primary">
-            {customer.status}
+          <span className="rounded-full bg-surface-secondary px-3 py-1 font-mono text-xs font-medium capitalize text-foreground">
+            {isDeleted ? "Recently Deleted" : customer.status}
           </span>
         </div>
 
@@ -94,6 +96,33 @@ export default async function CustomerDetailsPage({ params }: Props) {
           Customer profile, interactions, estimates, and jobs.
         </p>
       </header>
+
+      {isDeleted && (
+        <section className="rounded-xl border border-border bg-surface-secondary p-5">
+          <h2 className="font-mono text-base font-semibold text-foreground">
+            This customer is in Recently Deleted
+          </h2>
+
+          <p className="mt-2 text-sm text-muted">
+            This customer still counts toward your plan’s limit. Their profile
+            and activity history are available to view. Restore the customer
+            before editing their profile or adding new activity, estimates, or
+            jobs.
+          </p>
+
+          <p className="mt-2 text-sm text-muted">
+            Open Customers and select Recently Deleted to restore this customer
+            or permanently delete them. Customers with linked estimates or jobs
+            cannot be permanently deleted.
+          </p>
+
+          <Link
+            href={`/org/${slug}/customers`}
+            className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">
+            Go to customers →
+          </Link>
+        </section>
+      )}
 
       <div className="grid gap-5 md:grid-cols-2">
         <section className="rounded-xl border border-border bg-surface p-6">
@@ -133,12 +162,60 @@ export default async function CustomerDetailsPage({ params }: Props) {
         </section>
       </div>
 
-      <CustomerActivity
-        slug={slug}
-        customerId={customer.id}
-        userId={user.id}
-        activities={activities}
-      />
+      {isDeleted ? (
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-6">
+          <div>
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Activity history
+            </h2>
+
+            <p className="mt-1 text-sm text-muted">
+              Restore this customer to add or manage activity.
+            </p>
+          </div>
+
+          {activities.length === 0 ? (
+            <p className="text-sm text-muted">No activity recorded.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {activities.map((activity) => (
+                <li key={activity.id} className="space-y-2 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-mono text-xs font-medium capitalize text-primary">
+                      {activity.type}
+                    </p>
+
+                    <time
+                      dateTime={activity.created_at}
+                      className="text-xs text-muted">
+                      {new Date(activity.created_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          timeZone: "UTC",
+                        },
+                      )}
+                    </time>
+                  </div>
+
+                  <p className="whitespace-pre-wrap wrap-break-word text-sm text-foreground">
+                    {activity.content}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : (
+        <CustomerActivity
+          slug={slug}
+          customerId={customer.id}
+          userId={user.id}
+          activities={activities}
+        />
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="space-y-4">

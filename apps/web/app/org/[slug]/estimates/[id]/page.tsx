@@ -62,7 +62,7 @@ export default async function EstimateDetailsPage({ params }: Props) {
 
   const { data: customer } = await supabase
     .from("customers")
-    .select("name, email, phone")
+    .select("name, email, phone, deleted_at")
     .eq("id", estimate.customer_id)
     .eq("organization_id", organization.id)
     .single()
@@ -109,6 +109,26 @@ export default async function EstimateDetailsPage({ params }: Props) {
           </span>
         </div>
       </header>
+
+      {customer?.deleted_at && (
+        <div className="rounded-xl border border-border bg-surface-secondary p-5">
+          <p className="text-sm font-medium text-foreground">
+            This customer is in Recently Deleted.
+          </p>
+
+          <p className="mt-1 text-sm text-muted">
+            This record and its customer information remain available. Restore
+            the customer from Customers → Recently Deleted before creating new
+            linked records.
+          </p>
+
+          <Link
+            href={`/org/${slug}/customers/${estimate.customer_id}`}
+            className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">
+            View customer →
+          </Link>
+        </div>
+      )}
 
       <section className="rounded-xl border border-border bg-surface p-6">
         <h2 className="mb-5 font-mono text-lg font-semibold text-foreground">

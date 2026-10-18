@@ -6,18 +6,6 @@ type SearchParams = {
   page?: string
 }
 
-type Organization = {
-  organization_id: string
-  organization_name: string
-  organization_slug: string
-  organization_created_at: string
-  plan_id: string | null
-  plan_name: string | null
-  subscription_status: string | null
-  benefit_level: string
-  total_count: number
-}
-
 const PAGE_SIZE = 20
 
 export default async function OrganizationsPage({
@@ -140,7 +128,7 @@ export default async function OrganizationsPage({
           </tbody>
         </table>
 
-        {page < totalPages && (
+        {organizations.length === 0 && (
           <div className="p-8 text-center text-gray-500">
             No organizations found.
           </div>
@@ -161,7 +149,7 @@ export default async function OrganizationsPage({
             </Link>
           )}
 
-          {organizations.length === PAGE_SIZE && (
+          {page < totalPages && (
             <Link
               href={pageUrl(page + 1)}
               className="rounded-md border px-4 py-2 text-sm">
