@@ -46,6 +46,14 @@ export default async function AdminLayout({
               Platform {administrator.role}
             </span>
 
+            {administrator.role === "owner" && (
+              <Link
+                href="/admin/administrators"
+                className="text-sm font-medium text-primary hover:underline">
+                Administrators
+              </Link>
+            )}
+
             <Link
               href="/dashboard"
               className="text-sm text-gray-600 hover:underline">

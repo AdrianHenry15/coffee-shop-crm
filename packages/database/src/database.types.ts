@@ -23,7 +23,21 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "billing_plans": {
+            "account_details": {
+                  Row: {
+                    "phone": string | null,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "phone"?: string | null,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "phone"?: string | null,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"billing_plans": {
                   Row: {
                     "id": string,"max_customers": number | null,"max_estimates": number | null,"max_jobs": number | null,"max_leads": number | null,"max_members": number | null,"name": string
                   }
@@ -417,14 +431,31 @@ isOneToOne: false
 "grant_organization_partner":
 { Args: { "org_uuid": string }; Returns: undefined
                            },
+"grant_platform_administrator":
+{ Args: { "p_email": string }; Returns: string
+                           },
+"list_platform_administrators":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "created_at": string,"email": string,"role": string,"user_id": string
+            }[]
+                           },
+"onboard_organization":
+{ Args: { "p_address": string,"p_email": string,"p_name": string,"p_phone": string,"p_slug": string,"p_timezone": string,"p_website": string }; Returns: string
+                           },
 "revoke_organization_partner":
 { Args: { "org_uuid": string }; Returns: undefined
+                           },
+"revoke_platform_administrator":
+{ Args: { "p_user_id": string }; Returns: boolean
                            },
 "set_organization_maintenance":
 { Args: { "ends_at": string,"org_uuid": string,"starts_at": string }; Returns: undefined
                            },
 "sync_stripe_subscription":
 { Args: { "p_customer_id": string,"p_plan_id": string,"p_price_id": string,"p_status": string,"p_subscription_id": string }; Returns: undefined
+                           },
+"update_account_details":
+{ Args: { "p_first_name": string,"p_last_name": string,"p_phone": string }; Returns: undefined
                            },
 "update_estimate_items":
 { Args: { "p_estimate_id": string,"p_items": Json,"p_organization_id": string }; Returns: undefined

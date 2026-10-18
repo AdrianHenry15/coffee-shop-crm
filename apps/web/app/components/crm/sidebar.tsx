@@ -108,6 +108,13 @@ export function Sidebar({ currentSlug, organizations }: Props) {
           })}
         </nav>
 
+        <Link
+          href="/account"
+          onClick={() => setOpen(false)}
+          className="mb-4 block rounded-md px-3 py-2 text-sm text-sidebar-muted transition-colors hover:bg-white/10 hover:text-white">
+          Your account
+        </Link>
+
         <div className="mb-5 border-t border-white/10 pt-5">
           <ThemeSwitcher />
         </div>
