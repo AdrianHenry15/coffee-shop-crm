@@ -40,7 +40,9 @@ export default async function LoginPage({
           <p role="alert" className="text-sm text-red-600">
             {error === "missing-fields"
               ? "Email and password are required."
-              : "Invalid email or password."}
+              : error === "confirmation"
+                ? "That confirmation link is invalid or expired. Try signing up again or request a new confirmation email."
+                : "Invalid email or password."}
           </p>
         )}
 

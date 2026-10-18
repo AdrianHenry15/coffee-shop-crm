@@ -3,13 +3,16 @@ import { getOrganization } from "@/lib/organizations"
 import { createClient } from "@/app/lib/supabase/server"
 import { PipelineOverview } from "@/app/components/crm/pipeline-overview"
 import { Activity, RecentActivity } from "@/app/components/crm/recent-activity"
+import { FirstRunTour } from "@/app/components/crm/first-run-tour"
 
 export default async function OrganizationDashboard({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ tour?: string }>
 }) {
-  const { slug } = await params
+  const [{ slug }, query] = await Promise.all([params, searchParams])
   const organization = await getOrganization(slug)
   const supabase = await createClient()
 
@@ -285,6 +288,7 @@ export default async function OrganizationDashboard({
 
   return (
     <div className="space-y-8">
+      <FirstRunTour slug={slug} startOpen={query.tour === "welcome"} />
       {/* Dashboard Header */}
       <header>
         <p className="mb-2 font-mono text-xs font-medium uppercase tracking-widest text-primary">

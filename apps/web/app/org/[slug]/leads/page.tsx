@@ -2,6 +2,8 @@ import { getOrganization } from "@/lib/organizations"
 import { createClient } from "@/app/lib/supabase/server"
 import { LeadManager } from "@/app/components/crm/managers/lead-manager"
 import { LeadForm } from "@/app/components/crm/forms/lead-form"
+import { CsvImporter } from "@/app/components/crm/csv-importer"
+import { importLeads } from "./actions"
 
 export default async function LeadsPage({
   params,
@@ -88,9 +90,16 @@ export default async function LeadsPage({
             </p>
           </div>
 
-          <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
-            {leadsWithCustomers.length} total
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
+              {leadsWithCustomers.length} total
+            </span>
+
+            <CsvImporter
+              entity="leads"
+              onImport={importLeads.bind(null, slug)}
+            />
+          </div>
         </div>
 
         <LeadManager slug={slug} leads={leadsWithCustomers} />

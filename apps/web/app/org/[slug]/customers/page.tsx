@@ -4,6 +4,8 @@ import { CustomerManager } from "@/app/components/crm/managers/customer-manager"
 import { CustomerForm } from "@/app/components/crm/forms/customer-form"
 import { Suspense } from "react"
 import { RedirectToast } from "@/app/components/crm/ui/redirect-toast"
+import { CsvImporter } from "@/app/components/crm/csv-importer"
+import { importCustomers } from "./actions"
 
 const customerMessages = {
   converted: "Lead converted to customer successfully.",
@@ -74,9 +76,16 @@ export default async function CustomersPage({
             </p>
           </div>
 
-          <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
-            {customers?.length ?? 0} total
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs font-medium text-foreground">
+              {customers?.length ?? 0} total
+            </span>
+
+            <CsvImporter
+              entity="customers"
+              onImport={importCustomers.bind(null, slug)}
+            />
+          </div>
         </div>
 
         <CustomerManager slug={slug} customers={customers ?? []} />
