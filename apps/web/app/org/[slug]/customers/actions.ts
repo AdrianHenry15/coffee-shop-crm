@@ -182,11 +182,24 @@ export async function importCustomers(
   slug: string,
   csvText: string,
 ): Promise<ContactImportResult> {
-  if (
-    typeof csvText !== "string" ||
-    new TextEncoder().encode(csvText).byteLength > MAX_CSV_BYTES
-  ) {
-    return { success: false, imported: 0, message: "CSV file is too large." }
+  if (typeof csvText !== "string") {
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      issues: [],
+      message: "Invalid CSV file.",
+    }
+  }
+
+  if (new TextEncoder().encode(csvText).byteLength > MAX_CSV_BYTES) {
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      issues: [],
+      message: "CSV file is too large.",
+    }
   }
 
   let rows
@@ -197,17 +210,9 @@ export async function importCustomers(
     return {
       success: false,
       imported: 0,
+      skipped: 0,
+      issues: [],
       message: error instanceof Error ? error.message : "Invalid CSV file.",
-    }
-  }
-
-  const validationErrors = validateContactImportRows(rows)
-
-  if (validationErrors.length > 0) {
-    return {
-      success: false,
-      imported: 0,
-      message: validationErrors.slice(0, 5).join(" "),
     }
   }
 
@@ -225,11 +230,29 @@ export async function importCustomers(
     .single()
 
   if (orgError || !organization) {
-    return { success: false, imported: 0, message: "Organization not found." }
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      issues: [],
+      message: "Organization not found.",
+    }
+  }
+
+  const { validRows, issues } = validateContactImportRows(rows)
+
+  if (validRows.length === 0) {
+    return {
+      success: false,
+      imported: 0,
+      skipped: issues.length,
+      issues,
+      message: "No valid customers found. Nothing was imported.",
+    }
   }
 
   const { error } = await supabase.from("customers").insert(
-    rows.map((row) => ({
+    validRows.map((row) => ({
       organization_id: organization.id,
       name: row.name,
       email: row.email || null,
@@ -240,9 +263,12 @@ export async function importCustomers(
 
   if (error) {
     console.error("Error importing customers:", error)
+
     return {
       success: false,
       imported: 0,
+      skipped: 0,
+      issues: [],
       message: "Unable to import customers.",
     }
   }
@@ -252,7 +278,12 @@ export async function importCustomers(
 
   return {
     success: true,
-    imported: rows.length,
-    message: `Imported ${rows.length} customers.`,
+    imported: validRows.length,
+    skipped: issues.length,
+    issues,
+    message:
+      issues.length > 0
+        ? `Imported ${validRows.length} customers. Skipped ${issues.length} invalid rows.`
+        : `Imported ${validRows.length} customers.`,
   }
 }

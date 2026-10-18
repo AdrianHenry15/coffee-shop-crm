@@ -238,14 +238,26 @@ export async function importLeads(
   csvText: string,
 ): Promise<ContactImportResult> {
   if (typeof csvText !== "string") {
-    return { success: false, imported: 0, message: "Invalid CSV file." }
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      issues: [],
+      message: "Invalid CSV file.",
+    }
   }
 
   if (new TextEncoder().encode(csvText).byteLength > MAX_CSV_BYTES) {
-    return { success: false, imported: 0, message: "CSV file is too large." }
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      issues: [],
+      message: "CSV file is too large.",
+    }
   }
 
-  let rows: ContactImportRow[]
+  let rows
 
   try {
     rows = parseContactCsv(csvText)
@@ -253,17 +265,9 @@ export async function importLeads(
     return {
       success: false,
       imported: 0,
+      skipped: 0,
+      issues: [],
       message: error instanceof Error ? error.message : "Invalid CSV file.",
-    }
-  }
-
-  const validationErrors = validateContactImportRows(rows)
-
-  if (validationErrors.length > 0) {
-    return {
-      success: false,
-      imported: 0,
-      message: validationErrors.slice(0, 5).join(" "),
     }
   }
 
@@ -281,11 +285,29 @@ export async function importLeads(
     .single()
 
   if (orgError || !organization) {
-    return { success: false, imported: 0, message: "Organization not found." }
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      issues: [],
+      message: "Organization not found.",
+    }
+  }
+
+  const { validRows, issues } = validateContactImportRows(rows)
+
+  if (validRows.length === 0) {
+    return {
+      success: false,
+      imported: 0,
+      skipped: issues.length,
+      issues,
+      message: "No valid leads found. Nothing was imported.",
+    }
   }
 
   const { error } = await supabase.from("leads").insert(
-    rows.map((row) => ({
+    validRows.map((row) => ({
       organization_id: organization.id,
       name: row.name,
       email: row.email || null,
@@ -296,7 +318,14 @@ export async function importLeads(
 
   if (error) {
     console.error("Error importing leads:", error)
-    return { success: false, imported: 0, message: "Unable to import leads." }
+
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      issues: [],
+      message: "Unable to import leads.",
+    }
   }
 
   revalidatePath(`/org/${slug}/leads`)
@@ -304,7 +333,12 @@ export async function importLeads(
 
   return {
     success: true,
-    imported: rows.length,
-    message: `Imported ${rows.length} leads.`,
+    imported: validRows.length,
+    skipped: issues.length,
+    issues,
+    message:
+      issues.length > 0
+        ? `Imported ${validRows.length} leads. Skipped ${issues.length} invalid rows.`
+        : `Imported ${validRows.length} leads.`,
   }
 }

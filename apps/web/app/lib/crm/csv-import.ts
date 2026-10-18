@@ -1,24 +1,50 @@
 export type ContactImportRow = {
+  lineNumber: number
   name: string
   email: string
   phone: string
   notes: string
 }
 
+export type ContactImportIssue = {
+  row: number
+  reason: string
+}
+
 export type ContactImportResult = {
   success: boolean
   imported: number
+  skipped: number
+  issues: ContactImportIssue[]
   message: string
 }
 
 export const MAX_CSV_BYTES = 700 * 1024
 export const MAX_IMPORT_ROWS = 500
 
-function parseCsvRows(source: string): string[][] {
-  const rows: string[][] = []
+type ParsedCsvRow = {
+  lineNumber: number
+  values: string[]
+}
+
+function parseCsvRows(source: string): ParsedCsvRow[] {
+  const rows: ParsedCsvRow[] = []
   let row: string[] = []
   let field = ""
   let quoted = false
+  let lineNumber = 1
+  let rowStartLine = 1
+
+  function finishRow() {
+    row.push(field)
+
+    if (row.some((value) => value.trim() !== "")) {
+      rows.push({ lineNumber: rowStartLine, values: row })
+    }
+
+    row = []
+    field = ""
+  }
 
   for (let index = 0; index < source.length; index += 1) {
     const character = source[index]
@@ -29,6 +55,15 @@ function parseCsvRows(source: string): string[][] {
         index += 1
       } else if (character === '"') {
         quoted = false
+      } else if (character === "\r" || character === "\n") {
+        if (character === "\r" && source[index + 1] === "\n") {
+          field += "\r\n"
+          index += 1
+        } else {
+          field += character
+        }
+
+        lineNumber += 1
       } else {
         field += character
       }
@@ -42,19 +77,15 @@ function parseCsvRows(source: string): string[][] {
     } else if (character === ",") {
       row.push(field)
       field = ""
-    } else if (character === "\n" || character === "\r") {
-      row.push(field)
-
-      if (row.some((value) => value.trim() !== "")) {
-        rows.push(row)
-      }
-
-      row = []
-      field = ""
+    } else if (character === "\r" || character === "\n") {
+      finishRow()
 
       if (character === "\r" && source[index + 1] === "\n") {
         index += 1
       }
+
+      lineNumber += 1
+      rowStartLine = lineNumber
     } else {
       field += character
     }
@@ -64,10 +95,8 @@ function parseCsvRows(source: string): string[][] {
     throw new Error("The CSV has an opening quote without a matching quote.")
   }
 
-  row.push(field)
-
-  if (row.some((value) => value.trim() !== "")) {
-    rows.push(row)
+  if (row.length > 0 || field.trim() !== "") {
+    finishRow()
   }
 
   return rows
@@ -83,6 +112,7 @@ export function parseContactCsv(source: string): ContactImportRow[] {
   const aliases = new Map<string, keyof ContactImportRow>([
     ["name", "name"],
     ["fullname", "name"],
+    ["contactname", "name"],
     ["leadname", "name"],
     ["customername", "name"],
     ["email", "email"],
@@ -92,9 +122,10 @@ export function parseContactCsv(source: string): ContactImportRow[] {
     ["notes", "notes"],
     ["note", "notes"],
     ["description", "notes"],
+    ["address", "notes"],
   ])
 
-  const headers = parsedRows[0].map((header) =>
+  const headers = parsedRows[0].values.map((header) =>
     header
       .replace(/^\uFEFF/, "")
       .trim()
@@ -122,39 +153,50 @@ export function parseContactCsv(source: string): ContactImportRow[] {
     throw new Error(`Import up to ${MAX_IMPORT_ROWS} contacts at a time.`)
   }
 
-  return dataRows.map((values) => ({
-    name: (values[columnIndexes.get("name") ?? -1] ?? "").trim(),
-    email: (values[columnIndexes.get("email") ?? -1] ?? "").trim(),
-    phone: (values[columnIndexes.get("phone") ?? -1] ?? "").trim(),
-    notes: (values[columnIndexes.get("notes") ?? -1] ?? "").trim(),
+  return dataRows.map(({ lineNumber, values }) => ({
+    lineNumber,
+    name: (values[columnIndexes.get("name")!] ?? "").trim(),
+    email: (values[columnIndexes.get("email")!] ?? "").trim(),
+    phone: (values[columnIndexes.get("phone")!] ?? "").trim(),
+    notes: (values[columnIndexes.get("notes")!] ?? "").trim(),
   }))
 }
 
 export function validateContactImportRows(rows: ContactImportRow[]) {
-  const errors: string[] = []
+  const validRows: ContactImportRow[] = []
+  const issues: ContactImportIssue[] = []
 
-  rows.forEach((row, index) => {
-    const rowNumber = index + 2
+  for (const row of rows) {
+    const reasons: string[] = []
 
     if (!row.name || row.name.length > 200) {
-      errors.push(`Row ${rowNumber}: enter a name up to 200 characters.`)
+      reasons.push("Enter a name up to 200 characters.")
     }
 
     if (
       row.email &&
       (row.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email))
     ) {
-      errors.push(`Row ${rowNumber}: check the email address.`)
+      reasons.push("Check the email address.")
     }
 
     if (row.phone.length > 50) {
-      errors.push(`Row ${rowNumber}: phone must be 50 characters or fewer.`)
+      reasons.push("Phone must be 50 characters or fewer.")
     }
 
     if (row.notes.length > 5000) {
-      errors.push(`Row ${rowNumber}: notes must be 5,000 characters or fewer.`)
+      reasons.push("Notes must be 5,000 characters or fewer.")
     }
-  })
 
-  return errors
+    if (reasons.length > 0) {
+      issues.push({
+        row: row.lineNumber,
+        reason: reasons.join(" "),
+      })
+    } else {
+      validRows.push(row)
+    }
+  }
+
+  return { validRows, issues }
 }

@@ -15,24 +15,22 @@ export function CsvImporter({ entity, onImport }: CsvImporterProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const [isError, setIsError] = useState(false)
+  const [result, setResult] = useState<ContactImportResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function importFile(file?: File) {
-    setMessage(null)
-    setIsError(false)
+    setResult(null)
+    setError(null)
 
     if (!file) return
 
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      setIsError(true)
-      setMessage("Choose a CSV file.")
+      setError("Choose a CSV file.")
       return
     }
 
     if (file.size > MAX_CSV_BYTES) {
-      setIsError(true)
-      setMessage("CSV file is too large.")
+      setError("CSV file is too large.")
       return
     }
 
@@ -40,14 +38,13 @@ export function CsvImporter({ entity, onImport }: CsvImporterProps) {
 
     try {
       const csvText = await file.text()
-      const result = await onImport(csvText)
-
-      setIsError(!result.success)
-      setMessage(result.message)
-    } catch (error) {
-      setIsError(true)
-      setMessage(
-        error instanceof Error ? error.message : `Unable to import ${entity}.`,
+      const importResult = await onImport(csvText)
+      setResult(importResult)
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : `Unable to import ${entity}.`,
       )
     } finally {
       setIsImporting(false)
@@ -59,7 +56,7 @@ export function CsvImporter({ entity, onImport }: CsvImporterProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="w-full max-w-xl space-y-3">
       <input
         ref={inputRef}
         type="file"
@@ -93,12 +90,30 @@ export function CsvImporter({ entity, onImport }: CsvImporterProps) {
           : `Drop a CSV file here or click to import ${entity}`}
       </button>
 
-      {message && (
-        <p
-          role={isError ? "alert" : "status"}
-          className={`text-sm ${isError ? "text-red-700" : "text-green-800"}`}>
-          {message}
+      {error && (
+        <p role="alert" className="text-sm text-red-700">
+          {error}
         </p>
+      )}
+
+      {result && (
+        <div
+          role={result.success ? "status" : "alert"}
+          className="space-y-2 text-sm">
+          <p className={result.success ? "text-green-800" : "text-red-700"}>
+            {result.message}
+          </p>
+
+          {result.issues.length > 0 && (
+            <ul className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border bg-surface p-3 text-muted">
+              {result.issues.map((issue) => (
+                <li key={`${issue.row}-${issue.reason}`}>
+                  Row {issue.row}: {issue.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   )
