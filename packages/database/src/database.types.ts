@@ -51,6 +51,92 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"catalog_item_sections": {
+                  Row: {
+                    "content": NonNullable<Json>,"created_at": string,"id": string,"item_id": string,"kind": string,"organization_id": string,"position": number,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content": NonNullable<Json>,"created_at"?: string,"id"?: string,"item_id": string,"kind": string,"organization_id": string,"position"?: number,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "content"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"item_id"?: string,"kind"?: string,"organization_id"?: string,"position"?: number,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "catalog_section_item_same_organization"
+      columns: ["item_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "catalog_items"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
+                },"catalog_items": {
+                  Row: {
+                    "attributes": NonNullable<Json>,"created_at": string,"currency": string,"id": string,"name": string,"organization_id": string,"price_cents": number | null,"price_mode": string,"published_at": string | null,"slug": string,"status": string,"summary": string | null,"template_version_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attributes"?: NonNullable<Json>,"created_at"?: string,"currency"?: string,"id"?: string,"name": string,"organization_id": string,"price_cents"?: number | null,"price_mode"?: string,"published_at"?: string | null,"slug": string,"status"?: string,"summary"?: string | null,"template_version_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "attributes"?: NonNullable<Json>,"created_at"?: string,"currency"?: string,"id"?: string,"name"?: string,"organization_id"?: string,"price_cents"?: number | null,"price_mode"?: string,"published_at"?: string | null,"slug"?: string,"status"?: string,"summary"?: string | null,"template_version_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "catalog_item_template_same_organization"
+      columns: ["template_version_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "catalog_template_versions"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "catalog_items_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"catalog_template_versions": {
+                  Row: {
+                    "created_at": string,"fields": NonNullable<Json>,"id": string,"organization_id": string,"status": string,"template_id": string,"updated_at": string,"version_number": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"fields"?: NonNullable<Json>,"id"?: string,"organization_id": string,"status"?: string,"template_id": string,"updated_at"?: string,"version_number": number
+                  }
+                  Update: {
+                    "created_at"?: string,"fields"?: NonNullable<Json>,"id"?: string,"organization_id"?: string,"status"?: string,"template_id"?: string,"updated_at"?: string,"version_number"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "catalog_version_template_same_organization"
+      columns: ["template_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "catalog_templates"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
+                },"catalog_templates": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"description": string | null,"id": string,"kind": string,"name": string,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"description"?: string | null,"id"?: string,"kind": string,"name": string,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"description"?: string | null,"id"?: string,"kind"?: string,"name"?: string,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "catalog_templates_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"customer_activities": {
                   Row: {
                     "content": string,"created_at": string,"created_by": string,"customer_id": string,"id": string,"organization_id": string,"type": string
@@ -398,6 +484,9 @@ isOneToOne: false
                            },
 "convert_lead_to_customer":
 { Args: { "lead_uuid": string }; Returns: string
+                           },
+"create_catalog_template":
+{ Args: { "p_description": string,"p_fields": Json,"p_kind": string,"p_name": string,"p_organization_id": string }; Returns: string
                            },
 "create_estimate":
 { Args: { "p_customer_id": string,"p_items": Json,"p_notes": string,"p_organization_id": string }; Returns: string

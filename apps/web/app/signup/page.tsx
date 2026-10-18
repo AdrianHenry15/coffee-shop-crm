@@ -1,18 +1,11 @@
 import Link from "next/link"
-import { signup } from "@/app/auth/actions"
 import { redirect } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/server"
+import { AuthForm } from "@/app/components/auth/auth-form"
 
-export default async function SignupPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    error?: string
-  }>
-}) {
-  const { error } = await searchParams
-
+export default async function SignupPage() {
   const supabase = await createClient()
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -22,63 +15,30 @@ export default async function SignupPage({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div>
-          <h1 className="text-3xl font-semibold">Create your account</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            Get started with CoffeeShopCRM.
+    <main className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="w-full max-w-lg space-y-6 rounded-xl border border-border bg-surface p-6 sm:p-8">
+        <header className="space-y-2">
+          <p className="font-mono text-xs font-medium uppercase tracking-widest text-primary">
+            CoffeeShopCRM
           </p>
-        </div>
 
-        {error && (
-          <p role="alert" className="text-sm text-red-600">
-            {error === "invalid-input"
-              ? "Enter an email and a password with at least 8 characters."
-              : "Unable to create your account. Please try again."}
+          <h1 className="font-mono text-3xl font-semibold text-foreground">
+            Create your account
+          </h1>
+
+          <p className="text-sm text-muted">
+            Start with your personal details, then set up your business
+            workspace.
           </p>
-        )}
+        </header>
 
-        <form action={signup} className="space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="email" className="text-sm">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              className="w-full rounded-md border p-3"
-            />
-          </div>
+        <AuthForm mode="signup" />
 
-          <div className="space-y-1">
-            <label htmlFor="password" className="text-sm">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className="w-full rounded-md border p-3"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-md bg-black p-3 text-white">
-            Create account
-          </button>
-        </form>
-
-        <p className="text-center text-sm">
+        <p className="text-center text-sm text-muted">
           Already have an account?{" "}
-          <Link href="/login" className="underline">
+          <Link
+            href="/login"
+            className="font-medium text-primary hover:underline">
             Log in
           </Link>
         </p>

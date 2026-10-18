@@ -1,27 +1,22 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
-import { createOrganization } from "./actions"
 import { logout } from "@/app/auth/actions"
-import { createClient } from "../lib/supabase/server"
+import { createClient } from "@/app/lib/supabase/server"
+import { OnboardingForm } from "./onboarding-form"
 
-export default async function OnboardingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>
-}) {
-  const { error } = await searchParams
-
+export default async function OnboardingPage() {
   const supabase = await createClient()
 
-  const { data: userData, error: authError } = await supabase.auth.getUser()
+  const { data: authData, error: authError } = await supabase.auth.getUser()
 
-  if (authError || !userData.user) {
+  if (authError || !authData.user) {
     redirect("/login")
   }
 
   const { data: memberships, error: membershipError } = await supabase
     .from("organization_members")
     .select("organization_id")
-    .eq("user_id", userData.user.id)
+    .eq("user_id", authData.user.id)
     .eq("status", "active")
     .limit(1)
 
@@ -33,58 +28,54 @@ export default async function OnboardingPage({
     redirect("/dashboard")
   }
 
-  const errorMessages: Record<string, string> = {
-    "invalid-name": "Enter a valid business name.",
-    "slug-taken": "A business with this URL name already exists.",
-    "creation-failed": "Unable to create your organization. Try again.",
-  }
+  const timezones = [
+    ...new Set(["UTC", ...Intl.supportedValuesOf("timeZone")]),
+  ].sort()
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-6">
-        <div>
-          <h1 className="text-3xl font-semibold">Create your workspace</h1>
-
-          <p className="mt-2 text-gray-500">
-            Enter your business name to get started with CoffeeShopCRM.
+    <main className="min-h-screen bg-background px-4 py-10">
+      <div className="mx-auto max-w-xl space-y-6">
+        <header className="space-y-2">
+          <p className="font-mono text-xs font-medium uppercase tracking-widest text-primary">
+            CoffeeShopCRM / Business setup
           </p>
+
+          <h1 className="font-mono text-3xl font-semibold text-foreground">
+            Create your workspace
+          </h1>
+
+          <p className="text-sm text-muted">
+            Tell us about your business. These details are separate from your
+            personal account and can be updated in workspace settings.
+          </p>
+        </header>
+
+        <div className="rounded-xl border border-border bg-surface p-6">
+          {authData.user.email_confirmed_at ? (
+            <OnboardingForm timezones={timezones} />
+          ) : (
+            <p role="status" className="text-sm text-muted">
+              Confirm your account email before creating a workspace. Check your
+              inbox for the confirmation link.
+            </p>
+          )}
         </div>
 
-        {error && (
-          <p role="alert" className="text-sm text-red-600">
-            {errorMessages[error] ?? "Something went wrong."}
-          </p>
-        )}
+        <div className="flex items-center justify-between gap-4">
+          <Link
+            href="/account"
+            className="text-sm font-medium text-primary hover:underline">
+            Your account
+          </Link>
 
-        <form action={createOrganization} className="space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="name" className="text-sm">
-              Business name
-            </label>
-
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              maxLength={100}
-              placeholder="Third Generation Studios"
-              className="w-full rounded-md border p-3"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-md bg-black p-3 text-white">
-            Create workspace
-          </button>
-        </form>
-
-        <form action={logout}>
-          <button type="submit" className="text-sm text-gray-500 underline">
-            Log out
-          </button>
-        </form>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="text-sm text-muted hover:text-primary hover:underline">
+              Log out
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   )

@@ -1,14 +1,30 @@
 "use server"
 
 import { redirect } from "next/navigation"
-import { createClient } from "../lib/supabase/server"
+import { revalidatePath } from "next/cache"
+import { createClient } from "@/app/lib/supabase/server"
+import { getAuthConfig } from "@/app/lib/auth/config"
 
-export async function login(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim()
-  const password = String(formData.get("password") ?? "")
+export type AuthActionResult = {
+  error?: string
+  redirectTo?: string
+}
 
-  if (!email || !password) {
-    redirect("/login?error=missing-fields")
+function readText(formData: FormData, name: string) {
+  const value = formData.get(name)
+  return typeof value === "string" ? value : ""
+}
+
+function validEmail(email: string) {
+  return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+export async function login(formData: FormData): Promise<AuthActionResult> {
+  const email = readText(formData, "email").trim()
+  const password = readText(formData, "password")
+
+  if (!validEmail(email) || !password || password.length > 128) {
+    return { error: "Enter your email and password." }
   }
 
   const supabase = await createClient()
@@ -19,41 +35,107 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    redirect("/login?error=invalid-credentials")
+    if (error.code === "email_not_confirmed") {
+      return { error: "Confirm your email before signing in." }
+    }
+
+    if (error.status === 429) {
+      return {
+        error: "Too many attempts. Please wait before trying again.",
+      }
+    }
+
+    return { error: "Invalid email or password." }
   }
 
-  redirect("/dashboard")
+  revalidatePath("/", "layout")
+
+  return { redirectTo: "/dashboard" }
 }
 
-export async function signup(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim()
-  const password = String(formData.get("password") ?? "")
+export async function signup(formData: FormData): Promise<AuthActionResult> {
+  const firstName = readText(formData, "firstName").trim()
+  const lastName = readText(formData, "lastName").trim()
+  const email = readText(formData, "email").trim()
+  const phone = readText(formData, "phone").trim()
+  const password = readText(formData, "password")
 
-  if (!email || password.length < 8) {
-    redirect("/signup?error=invalid-input")
+  if (
+    !firstName ||
+    firstName.length > 100 ||
+    !lastName ||
+    lastName.length > 100
+  ) {
+    return {
+      error: "Enter your first and last names, up to 100 characters each.",
+    }
   }
 
+  if (!validEmail(email)) {
+    return { error: "Enter a valid email address." }
+  }
+
+  const phoneDigits = phone.replace(/\D/g, "")
+
+  if (
+    !phone ||
+    phone.length > 50 ||
+    phoneDigits.length < 7 ||
+    phoneDigits.length > 15
+  ) {
+    return {
+      error: "Enter a phone number containing 7–15 digits.",
+    }
+  }
+
+  if (password.length < 8 || password.length > 128) {
+    return {
+      error: "Use a password containing 8–128 characters.",
+    }
+  }
+
+  const { siteUrl } = getAuthConfig()
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/confirm`,
+      emailRedirectTo: `${siteUrl}/auth/confirm`,
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        contact_phone: phone,
+      },
     },
   })
 
   if (error) {
-    redirect("/signup?error=signup-failed")
+    if (error.status === 429) {
+      return {
+        error: "Too many attempts. Please wait before trying again.",
+      }
+    }
+
+    return {
+      error:
+        "Unable to create your account. Check your details or try signing in if you already registered.",
+    }
   }
 
-  redirect("/login?message=check-email")
+  if (data.session) {
+    revalidatePath("/", "layout")
+    return { redirectTo: "/dashboard" }
+  }
+
+  return { redirectTo: "/login?message=check-email" }
 }
 
 export async function logout() {
   const supabase = await createClient()
 
   await supabase.auth.signOut()
+  revalidatePath("/", "layout")
 
   redirect("/login")
 }

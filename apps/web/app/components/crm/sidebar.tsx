@@ -24,6 +24,7 @@ const navigation = [
   { label: "Customers", path: "customers" },
   { label: "Estimates", path: "estimates" },
   { label: "Jobs", path: "jobs" },
+  { label: "Catalog", path: "catalog" },
   { label: "Schedule", path: "schedule" },
   { label: "Settings", path: "settings" },
 ]
@@ -89,7 +90,7 @@ export function Sidebar({ currentSlug, organizations }: Props) {
         <nav className="mt-8 flex-1 space-y-1">
           {navigation.map((item) => {
             const href = `/org/${currentSlug}/${item.path}`
-            const active = pathname === href
+            const active = pathname === href || pathname.startsWith(`${href}/`)
 
             return (
               <Link
