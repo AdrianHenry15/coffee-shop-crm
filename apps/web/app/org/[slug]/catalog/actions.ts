@@ -6,6 +6,7 @@ import type {
   CatalogAttributes,
   CreateCatalogItemResult,
 } from "@/app/lib/catalog/types"
+import { readCatalogPricing } from "@/app/lib/catalog/pricing"
 
 function isCatalogAttributes(value: unknown): value is CatalogAttributes {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -38,6 +39,12 @@ export async function createCatalogItem(
     return {
       error: "Only workspace owners and admins can manage the catalog.",
     }
+  }
+
+  const pricingResult = readCatalogPricing(formData)
+
+  if (!pricingResult.success) {
+    return { error: pricingResult.error }
   }
 
   const templateVersionId = String(
@@ -98,7 +105,7 @@ export async function createCatalogItem(
       summary: summary || null,
       attributes,
       status: "draft",
-      price_mode: "quote",
+      ...pricingResult.pricing,
     })
     .select("id")
     .single()
@@ -134,6 +141,12 @@ export async function updateCatalogItem(
     return {
       error: "Only workspace owners and admins can manage the catalog.",
     }
+  }
+
+  const pricingResult = readCatalogPricing(formData)
+
+  if (!pricingResult.success) {
+    return { error: pricingResult.error }
   }
 
   const name = String(formData.get("name") ?? "").trim()
@@ -179,6 +192,7 @@ export async function updateCatalogItem(
       slug: itemSlug,
       summary: summary || null,
       attributes,
+      ...pricingResult.pricing,
     })
     .eq("id", itemId)
     .eq("organization_id", organization.id)

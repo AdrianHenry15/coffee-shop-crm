@@ -22,6 +22,12 @@ type EditableField = {
 
 type Props = {
   returnUrl: string
+  initialTemplate?: {
+    name: string
+    description: string
+    kind: "product" | "service"
+    fields: CatalogField[]
+  }
   onSave: (formData: FormData) => Promise<CreateTemplateResult>
 }
 
@@ -53,9 +59,22 @@ function makeFieldKey(label: string) {
   return (/^[a-z]/.test(key) ? key : `field_${key}`).slice(0, 64)
 }
 
-export function TemplateEditor({ returnUrl, onSave }: Props) {
+export function TemplateEditor({ returnUrl, initialTemplate, onSave }: Props) {
   const router = useRouter()
-  const [fields, setFields] = useState<EditableField[]>([])
+
+  const [fields, setFields] = useState<EditableField[]>(() =>
+    (initialTemplate?.fields ?? []).map((field) => ({
+      id: field.key,
+      key: field.key,
+      label: field.label,
+      type: field.type,
+      required: field.required,
+      help: field.help ?? "",
+      group: field.group ?? "",
+      unit: field.unit ?? "",
+      optionsText: field.options?.join("\n") ?? "",
+    })),
+  )
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
@@ -182,7 +201,7 @@ export function TemplateEditor({ returnUrl, onSave }: Props) {
           router.refresh()
         }
       } catch {
-        setError("Unable to create the template. Please try again.")
+        setError("Unable to save the template. Please try again.")
       }
     })
   }
@@ -206,6 +225,7 @@ export function TemplateEditor({ returnUrl, onSave }: Props) {
 
             <input
               id="template-name"
+              defaultValue={initialTemplate?.name ?? ""}
               name="name"
               required
               maxLength={100}
@@ -224,7 +244,8 @@ export function TemplateEditor({ returnUrl, onSave }: Props) {
             <select
               id="template-kind"
               name="kind"
-              defaultValue="product"
+              defaultValue={initialTemplate?.kind ?? "product"}
+              disabled={Boolean(initialTemplate)}
               className={inputClass}>
               <option value="product">Product</option>
               <option value="service">Service</option>
@@ -245,6 +266,7 @@ export function TemplateEditor({ returnUrl, onSave }: Props) {
               rows={3}
               maxLength={2000}
               className={inputClass}
+              defaultValue={initialTemplate?.description ?? ""}
             />
           </div>
         </section>
@@ -463,8 +485,9 @@ export function TemplateEditor({ returnUrl, onSave }: Props) {
 
       <div className="space-y-4 rounded-xl border border-border bg-surface p-6">
         <p className="text-sm text-muted">
-          Activating this template makes it available for new items. Its field
-          definitions will be locked; future changes use a new version.
+          {initialTemplate
+            ? "Saving creates a new active version for new items. Existing products and services keep their original field definitions."
+            : "Activating this template makes it available for new items. Future field changes create a new version."}
         </p>
 
         {error && (
@@ -477,7 +500,11 @@ export function TemplateEditor({ returnUrl, onSave }: Props) {
           type="submit"
           disabled={pending}
           className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
-          {pending ? "Creating..." : "Create and activate template"}
+          {pending
+            ? "Saving..."
+            : initialTemplate
+              ? "Save and activate new version"
+              : "Create and activate template"}
         </button>
       </div>
     </form>

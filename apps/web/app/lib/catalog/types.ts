@@ -31,3 +31,5 @@ export type CreateCatalogItemResult = {
   error?: string
   itemId?: string
 }
+
+export type CatalogPriceMode = "quote" | "fixed" | "starting_at"

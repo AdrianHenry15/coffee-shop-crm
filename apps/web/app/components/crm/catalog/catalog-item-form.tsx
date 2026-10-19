@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import type {
   CatalogAttributes,
   CatalogField,
+  CatalogPriceMode,
   CreateCatalogItemResult,
 } from "@/app/lib/catalog/types"
 
@@ -22,6 +23,8 @@ type InitialCatalogItem = {
   slug: string
   summary: string
   attributes: CatalogAttributes
+  priceMode: CatalogPriceMode
+  priceCents: number | null
 }
 
 type CatalogItemFormProps = {
@@ -61,6 +64,15 @@ export function CatalogItemForm({
   const [slugEdited, setSlugEdited] = useState(Boolean(initialItem))
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [priceMode, setPriceMode] = useState<CatalogPriceMode>(
+    initialItem?.priceMode ?? "quote",
+  )
+
+  const [priceAmount, setPriceAmount] = useState(
+    initialItem?.priceCents != null
+      ? (initialItem.priceCents / 100).toFixed(2)
+      : "",
+  )
 
   const initialAttributes = initialItem?.attributes ?? {}
 
@@ -143,6 +155,82 @@ export function CatalogItemForm({
           <h2 className="font-mono text-lg font-semibold text-foreground">
             Item details
           </h2>
+
+          <section className="space-y-5 rounded-xl border border-border bg-surface p-6">
+            <div className="space-y-2">
+              <h2 className="font-mono text-lg font-semibold text-foreground">
+                Pricing
+              </h2>
+
+              <p className="text-sm text-muted">
+                Choose how this product or service is priced. Currency is USD.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="priceMode"
+                className="block text-sm font-medium text-foreground">
+                Pricing option
+              </label>
+
+              <select
+                id="priceMode"
+                name="priceMode"
+                value={priceMode}
+                onChange={(event) => {
+                  const value = event.target.value
+
+                  if (
+                    value === "quote" ||
+                    value === "fixed" ||
+                    value === "starting_at"
+                  ) {
+                    setPriceMode(value)
+                  }
+                }}
+                className={inputClassName}>
+                <option value="quote">Request a quote</option>
+                <option value="fixed">Fixed price</option>
+                <option value="starting_at">Starting at</option>
+              </select>
+            </div>
+
+            {priceMode !== "quote" ? (
+              <div className="space-y-2">
+                <label
+                  htmlFor="priceAmount"
+                  className="block text-sm font-medium text-foreground">
+                  {priceMode === "starting_at"
+                    ? "Starting price (USD)"
+                    : "Price (USD)"}
+                </label>
+
+                <input
+                  id="priceAmount"
+                  name="priceAmount"
+                  type="text"
+                  inputMode="decimal"
+                  value={priceAmount}
+                  onChange={(event) => setPriceAmount(event.target.value)}
+                  required
+                  maxLength={12}
+                  pattern="[0-9]{1,9}(\.[0-9]{1,2})?"
+                  placeholder="149.99"
+                  aria-describedby="price-help"
+                  className={inputClassName}
+                />
+
+                <p id="price-help" className="text-xs text-muted">
+                  Enter the amount without a dollar sign or commas.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted">
+                No public price is specified. Customers will request a quote.
+              </p>
+            )}
+          </section>
 
           <div className="space-y-2">
             <label

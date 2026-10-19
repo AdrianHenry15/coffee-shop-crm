@@ -51,6 +51,26 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"catalog_item_images": {
+                  Row: {
+                    "alt_text": string,"created_at": string,"file_extension": string,"id": string,"item_id": string,"object_path": string | null,"organization_id": string,"position": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alt_text"?: string,"created_at"?: string,"file_extension": string,"id"?: string,"item_id": string,"object_path"?: never,"organization_id": string,"position"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "alt_text"?: string,"created_at"?: string,"file_extension"?: string,"id"?: string,"item_id"?: string,"object_path"?: never,"organization_id"?: string,"position"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "catalog_item_images_item_fk"
+      columns: ["item_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "catalog_items"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
                 },"catalog_item_sections": {
                   Row: {
                     "content": NonNullable<Json>,"created_at": string,"id": string,"item_id": string,"kind": string,"organization_id": string,"position": number,"title": string,"updated_at": string
@@ -537,6 +557,9 @@ isOneToOne: false
 "revoke_platform_administrator":
 { Args: { "p_user_id": string }; Returns: boolean
                            },
+"set_catalog_primary_image":
+{ Args: { "p_image_id": string,"p_item_id": string,"p_organization_id": string }; Returns: undefined
+                           },
 "set_organization_maintenance":
 { Args: { "ends_at": string,"org_uuid": string,"starts_at": string }; Returns: undefined
                            },
@@ -545,6 +568,9 @@ isOneToOne: false
                            },
 "update_account_details":
 { Args: { "p_first_name": string,"p_last_name": string,"p_phone": string }; Returns: undefined
+                           },
+"update_catalog_template":
+{ Args: { "p_description": string,"p_expected_version_id": string,"p_fields": Json,"p_name": string,"p_organization_id": string,"p_template_id": string }; Returns: string
                            },
 "update_estimate_items":
 { Args: { "p_estimate_id": string,"p_items": Json,"p_organization_id": string }; Returns: undefined

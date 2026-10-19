@@ -81,6 +81,13 @@ export default async function CatalogTemplatesPage({
                     <h2 className="font-mono text-lg font-semibold text-foreground">
                       {template.name}
                     </h2>
+                    {canManage && activeVersion && (
+                      <Link
+                        href={`/org/${slug}/catalog/templates/${template.id}/edit`}
+                        className="inline-flex rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-secondary">
+                        Edit template
+                      </Link>
+                    )}
 
                     {template.description && (
                       <p className="mt-2 text-sm text-muted">

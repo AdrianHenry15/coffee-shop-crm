@@ -4,6 +4,12 @@ import { getCatalogAccess } from "@/app/lib/catalog/access"
 import type { CatalogAttributes, CatalogField } from "@/app/lib/catalog/types"
 import { CatalogItemForm } from "@/app/components/crm/catalog/catalog-item-form"
 import { updateCatalogItem } from "../../actions"
+import { CatalogImageGallery } from "@/app/components/crm/catalog/catalog-image-gallery"
+import {
+  removeCatalogImage,
+  setPrimaryCatalogImage,
+  updateCatalogImageAlt,
+} from "../../image-actions"
 
 export default async function EditCatalogItemPage({
   params,
@@ -21,7 +27,9 @@ export default async function EditCatalogItemPage({
 
   const { data: item, error: itemError } = await supabase
     .from("catalog_items")
-    .select("id, name, slug, summary, status, attributes, template_version_id")
+    .select(
+      "id, name, slug, summary, status, attributes, template_version_id, price_mode, price_cents",
+    )
     .eq("id", id)
     .eq("organization_id", organization.id)
     .maybeSingle()
@@ -60,6 +68,42 @@ export default async function EditCatalogItemPage({
     throw new Error("Unable to load the item's template.")
   }
 
+  const { data: images, error: imagesError } = await supabase
+    .from("catalog_item_images")
+    .select("id, object_path, alt_text, position, created_at")
+    .eq("organization_id", organization.id)
+    .eq("item_id", item.id)
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
+
+  if (imagesError) {
+    throw new Error("Unable to load catalog images.")
+  }
+
+  const imageRows = images ?? []
+  const signedUrls = new Map<string, string>()
+
+  const imagePaths = imageRows
+    .map((image) => image.object_path)
+    .filter((path): path is string => typeof path === "string")
+
+  if (imagePaths.length > 0) {
+    const { data: signedImages, error: signingError } = await supabase.storage
+      .from("catalog-images")
+      .createSignedUrls(imagePaths, 3600)
+
+    if (signingError) {
+      console.error("Unable to create catalog image previews:", signingError)
+    }
+
+    for (const image of signedImages ?? []) {
+      if (image.path && image.signedUrl && !image.error) {
+        signedUrls.set(image.path, image.signedUrl)
+      }
+    }
+  }
+
   return (
     <div className="max-w-3xl space-y-8">
       <header className="space-y-3">
@@ -78,6 +122,22 @@ export default async function EditCatalogItemPage({
         </p>
       </header>
 
+      <CatalogImageGallery
+        organizationId={organization.id}
+        itemId={item.id}
+        images={imageRows.map((image) => ({
+          id: image.id,
+          altText: image.alt_text,
+          position: image.position,
+          url: image.object_path
+            ? (signedUrls.get(image.object_path) ?? null)
+            : null,
+        }))}
+        onSetPrimary={setPrimaryCatalogImage.bind(null, slug, item.id)}
+        onRemove={removeCatalogImage.bind(null, slug, item.id)}
+        onSaveAlt={updateCatalogImageAlt.bind(null, slug, item.id)}
+      />
+
       <CatalogItemForm
         key={item.id}
         templates={[
@@ -89,6 +149,11 @@ export default async function EditCatalogItemPage({
           },
         ]}
         initialItem={{
+          priceMode:
+            item.price_mode === "fixed" || item.price_mode === "starting_at"
+              ? item.price_mode
+              : "quote",
+          priceCents: item.price_cents,
           templateVersionId: version.id,
           name: item.name,
           slug: item.slug,
