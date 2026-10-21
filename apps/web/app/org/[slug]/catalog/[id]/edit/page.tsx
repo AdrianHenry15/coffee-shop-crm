@@ -120,6 +120,11 @@ export default async function EditCatalogItemPage({
         <p className="text-sm text-muted">
           Update {item.name}. Saving keeps this item as a draft.
         </p>
+        <Link
+          href={`/org/${slug}/catalog/${item.id}`}
+          className="inline-flex rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-secondary">
+          Preview and publish
+        </Link>
       </header>
 
       <CatalogImageGallery

@@ -77,7 +77,13 @@ export default async function CatalogPage({
               key={item.id}
               className="flex flex-wrap items-center justify-between gap-3 p-5">
               <div>
-                <h2 className="font-medium text-foreground">{item.name}</h2>
+                <h2 className="font-medium text-foreground">
+                  <Link
+                    href={`/org/${slug}/catalog/${item.id}`}
+                    className="hover:text-primary hover:underline">
+                    {item.name}
+                  </Link>
+                </h2>
 
                 <p className="mt-1 font-mono text-xs text-muted">{item.slug}</p>
               </div>
