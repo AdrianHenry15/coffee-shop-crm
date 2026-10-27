@@ -731,6 +731,664 @@ SELECT is(
 
 RESET ROLE;
 
+-- =========================================================
+-- Section saving and image management regression tests
+-- =========================================================
+
+RESET ROLE;
+
+DO $$
+DECLARE
+  v_item_id uuid := gen_random_uuid();
+  v_image_a uuid := gen_random_uuid();
+  v_image_b uuid := gen_random_uuid();
+  v_second_image uuid := gen_random_uuid();
+BEGIN
+  PERFORM set_config(
+    'test.catalog_content_item',
+    v_item_id::text,
+    true
+  );
+
+  PERFORM set_config('test.catalog_image_a', v_image_a::text, true);
+  PERFORM set_config('test.catalog_image_b', v_image_b::text, true);
+  PERFORM set_config(
+    'test.catalog_second_image',
+    v_second_image::text,
+    true
+  );
+
+  INSERT INTO public.catalog_items (
+    id,
+    organization_id,
+    template_version_id,
+    name,
+    slug
+  )
+  VALUES (
+    v_item_id,
+    current_setting('test.catalog_org_a')::uuid,
+    current_setting('test.catalog_version_a')::uuid,
+    'Content regression item',
+    'content-regression-item'
+  );
+
+  PERFORM set_config(
+    'test.catalog_sections_payload',
+    jsonb_build_array(
+      jsonb_build_object(
+        'id', gen_random_uuid(),
+        'kind', 'text',
+        'title', 'Description',
+        'content', jsonb_build_object(
+          'text', 'A detailed product description.'
+        )
+      ),
+      jsonb_build_object(
+        'id', gen_random_uuid(),
+        'kind', 'list',
+        'title', 'Features',
+        'content', jsonb_build_object(
+          'items', jsonb_build_array(
+            'Battery powered',
+            'Low maintenance'
+          )
+        )
+      ),
+      jsonb_build_object(
+        'id', gen_random_uuid(),
+        'kind', 'specifications',
+        'title', 'Specifications',
+        'content', jsonb_build_object(
+          'field_keys', jsonb_build_array('width', 'power')
+        )
+      )
+    )::text,
+    true
+  );
+
+  -- These reserve image records only.
+  -- Actual file uploads are tested separately through Storage.
+  INSERT INTO public.catalog_item_images (
+    id,
+    organization_id,
+    item_id,
+    file_extension,
+    alt_text,
+    position
+  )
+  VALUES
+    (
+      v_image_a,
+      current_setting('test.catalog_org_a')::uuid,
+      v_item_id,
+      'webp',
+      'Original image description',
+      0
+    ),
+    (
+      v_image_b,
+      current_setting('test.catalog_org_b')::uuid,
+      current_setting('test.catalog_item_b')::uuid,
+      'png',
+      'Organization B image',
+      0
+    );
+END;
+$$;
+
+-- =========================================================
+-- Anonymous image access
+-- =========================================================
+
+SET LOCAL ROLE anon;
+
+SELECT throws_ok(
+  $$ SELECT * FROM public.catalog_item_images $$,
+  '42501',
+  NULL,
+  'Anonymous visitors cannot read internal image records'
+);
+
+RESET ROLE;
+
+-- =========================================================
+-- Owner: section saving, rollback, and stale revisions
+-- =========================================================
+
+SET LOCAL ROLE authenticated;
+
+DO $$
+BEGIN
+  PERFORM set_config(
+    'request.jwt.claim.sub',
+    current_setting('test.catalog_owner'),
+    true
+  );
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', current_setting('test.catalog_owner'),
+      'role', 'authenticated'
+    )::text,
+    true
+  );
+END;
+$$;
+
+SELECT lives_ok(
+  $$
+    SELECT public.save_catalog_item_sections(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      (
+        SELECT updated_at
+        FROM public.catalog_items
+        WHERE id = current_setting('test.catalog_content_item')::uuid
+      ),
+      current_setting('test.catalog_sections_payload')::jsonb
+    )
+  $$,
+  'Owners can save all three content section types'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_sections
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  3::bigint,
+  'Saving stores the complete section collection'
+);
+
+SELECT is(
+  (
+    SELECT array_agg(title ORDER BY position, id)
+    FROM public.catalog_item_sections
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  ARRAY['Description', 'Features', 'Specifications']::text[],
+  'Sections retain the submitted order'
+);
+
+SELECT is(
+  (
+    SELECT content
+    FROM public.catalog_item_sections
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+      AND kind = 'specifications'
+  ),
+  '{"field_keys":["width","power"]}'::jsonb,
+  'Specifications store field references rather than copied values'
+);
+
+-- Capture the complete collection to verify atomic rollback.
+DO $$
+BEGIN
+  PERFORM set_config(
+    'test.catalog_sections_before',
+    (
+      SELECT jsonb_agg(to_jsonb(section) ORDER BY position, id)::text
+      FROM public.catalog_item_sections AS section
+      WHERE item_id = current_setting('test.catalog_content_item')::uuid
+    ),
+    true
+  );
+END;
+$$;
+
+SELECT throws_ok(
+  $$
+    SELECT public.save_catalog_item_sections(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      (
+        SELECT updated_at
+        FROM public.catalog_items
+        WHERE id = current_setting('test.catalog_content_item')::uuid
+      ),
+      jsonb_build_array(
+        jsonb_build_object(
+          'id', gen_random_uuid(),
+          'kind', 'text',
+          'title', 'Replacement description',
+          'content', jsonb_build_object('text', 'Valid replacement')
+        ),
+        jsonb_build_object(
+          'id', gen_random_uuid(),
+          'kind', 'list',
+          'title', 'Invalid features',
+          'content', '{"items":[123]}'::jsonb
+        )
+      )
+    )
+  $$,
+  '23514',
+  NULL,
+  'One invalid section rejects the entire save'
+);
+
+SELECT is(
+  (
+    SELECT jsonb_agg(to_jsonb(section) ORDER BY position, id)
+    FROM public.catalog_item_sections AS section
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  current_setting('test.catalog_sections_before')::jsonb,
+  'Failed section saves preserve every previous section'
+);
+
+SELECT throws_ok(
+  $$
+    SELECT public.save_catalog_item_sections(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      (
+        SELECT updated_at - interval '1 second'
+        FROM public.catalog_items
+        WHERE id = current_setting('test.catalog_content_item')::uuid
+      ),
+      '[]'::jsonb
+    )
+  $$,
+  '40001',
+  NULL,
+  'Section saving rejects an outdated item revision'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_sections
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  3::bigint,
+  'An outdated revision cannot erase saved content'
+);
+
+UPDATE public.catalog_items
+SET
+  attributes = '{"width":860,"power":"Battery"}'::jsonb,
+  status = 'published'
+WHERE id = current_setting('test.catalog_content_item')::uuid;
+
+SELECT throws_ok(
+  $$
+    SELECT public.save_catalog_item_sections(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      (
+        SELECT updated_at
+        FROM public.catalog_items
+        WHERE id = current_setting('test.catalog_content_item')::uuid
+      ),
+      '[]'::jsonb
+    )
+  $$,
+  '23514',
+  NULL,
+  'The section-saving RPC rejects published items'
+);
+
+UPDATE public.catalog_items
+SET status = 'draft'
+WHERE id = current_setting('test.catalog_content_item')::uuid;
+
+-- =========================================================
+-- Owner: image reservations and primary selection
+-- =========================================================
+
+SELECT is(
+  (
+    SELECT object_path
+    FROM public.catalog_item_images
+    WHERE id = current_setting('test.catalog_image_a')::uuid
+  ),
+  current_setting('test.catalog_org_a') || '/' ||
+  current_setting('test.catalog_content_item') || '/' ||
+  current_setting('test.catalog_image_a') || '.webp',
+  'Image paths include the organization, item, and image identifiers'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_images
+    WHERE organization_id = current_setting('test.catalog_org_b')::uuid
+  ),
+  0::bigint,
+  'Owners cannot read another organization image records'
+);
+
+SELECT lives_ok(
+  $$
+    INSERT INTO public.catalog_item_images (
+      id,
+      organization_id,
+      item_id,
+      file_extension,
+      position
+    )
+    VALUES (
+      current_setting('test.catalog_second_image')::uuid,
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      'jpg',
+      1
+    )
+  $$,
+  'Owners can reserve image uploads for their items'
+);
+
+SELECT throws_ok(
+  $$
+    INSERT INTO public.catalog_item_images (
+      organization_id,
+      item_id,
+      file_extension
+    )
+    VALUES (
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_item_b')::uuid,
+      'webp'
+    )
+  $$,
+  '42501',
+  NULL,
+  'Image reservations cannot target another organization item'
+);
+
+SELECT throws_ok(
+  $$
+    UPDATE public.catalog_item_images
+    SET file_extension = 'png'
+    WHERE id = current_setting('test.catalog_image_a')::uuid
+  $$,
+  '23514',
+  NULL,
+  'Existing image storage identities cannot be changed'
+);
+
+SELECT lives_ok(
+  $$
+    SELECT public.set_catalog_primary_image(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      current_setting('test.catalog_second_image')::uuid
+    )
+  $$,
+  'Owners can select the primary image'
+);
+
+SELECT is(
+  (
+    SELECT id
+    FROM public.catalog_item_images
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+    ORDER BY position, created_at, id
+    LIMIT 1
+  ),
+  current_setting('test.catalog_second_image')::uuid,
+  'The selected primary image appears first'
+);
+
+-- Two images already exist; a nineteen-row insert exceeds twenty.
+SELECT throws_ok(
+  $$
+    INSERT INTO public.catalog_item_images (
+      organization_id,
+      item_id,
+      file_extension,
+      position
+    )
+    SELECT
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      'webp',
+      image_number + 1
+    FROM generate_series(1, 19) AS image_number
+  $$,
+  '23514',
+  NULL,
+  'Image reservations enforce the twenty-image limit'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_images
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  2::bigint,
+  'An oversized image reservation batch rolls back completely'
+);
+
+RESET ROLE;
+
+-- =========================================================
+-- Ordinary members: read access without management access
+-- =========================================================
+
+SET LOCAL ROLE authenticated;
+
+DO $$
+BEGIN
+  PERFORM set_config(
+    'request.jwt.claim.sub',
+    current_setting('test.catalog_member'),
+    true
+  );
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', current_setting('test.catalog_member'),
+      'role', 'authenticated'
+    )::text,
+    true
+  );
+END;
+$$;
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_sections
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  3::bigint,
+  'Members can read their organization content sections'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_images
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  2::bigint,
+  'Members can read their organization image records'
+);
+
+SELECT throws_ok(
+  $$
+    SELECT public.save_catalog_item_sections(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      (
+        SELECT updated_at
+        FROM public.catalog_items
+        WHERE id = current_setting('test.catalog_content_item')::uuid
+      ),
+      '[]'::jsonb
+    )
+  $$,
+  '42501',
+  NULL,
+  'Members cannot save catalog sections'
+);
+
+SELECT throws_ok(
+  $$
+    SELECT public.set_catalog_primary_image(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      current_setting('test.catalog_image_a')::uuid
+    )
+  $$,
+  '42501',
+  NULL,
+  'Members cannot change the primary image'
+);
+
+UPDATE public.catalog_item_images
+SET alt_text = 'Unauthorized description'
+WHERE id = current_setting('test.catalog_image_a')::uuid;
+
+SELECT is(
+  (
+    SELECT alt_text
+    FROM public.catalog_item_images
+    WHERE id = current_setting('test.catalog_image_a')::uuid
+  ),
+  'Original image description',
+  'Members cannot modify image descriptions'
+);
+
+DELETE FROM public.catalog_item_images
+WHERE id = current_setting('test.catalog_image_a')::uuid;
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_images
+    WHERE id = current_setting('test.catalog_image_a')::uuid
+  ),
+  1::bigint,
+  'Members cannot delete image records'
+);
+
+RESET ROLE;
+
+-- =========================================================
+-- Other organization owner: no cross-tenant access
+-- =========================================================
+
+SET LOCAL ROLE authenticated;
+
+DO $$
+BEGIN
+  PERFORM set_config(
+    'request.jwt.claim.sub',
+    current_setting('test.catalog_outsider'),
+    true
+  );
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', current_setting('test.catalog_outsider'),
+      'role', 'authenticated'
+    )::text,
+    true
+  );
+END;
+$$;
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_images
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  0::bigint,
+  'Another organization owner cannot read these image records'
+);
+
+SELECT throws_ok(
+  $$
+    SELECT public.save_catalog_item_sections(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      now(),
+      '[]'::jsonb
+    )
+  $$,
+  '42501',
+  NULL,
+  'Another organization owner cannot overwrite these sections'
+);
+
+SELECT throws_ok(
+  $$
+    SELECT public.set_catalog_primary_image(
+      current_setting('test.catalog_org_b')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      current_setting('test.catalog_image_a')::uuid
+    )
+  $$,
+  'P0002',
+  NULL,
+  'Supplying an owned organization cannot grant access to another item'
+);
+
+RESET ROLE;
+
+-- =========================================================
+-- Workspace administrator: delegated content management
+-- =========================================================
+
+SET LOCAL ROLE authenticated;
+
+DO $$
+BEGIN
+  PERFORM set_config(
+    'request.jwt.claim.sub',
+    current_setting('test.catalog_admin'),
+    true
+  );
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', current_setting('test.catalog_admin'),
+      'role', 'authenticated'
+    )::text,
+    true
+  );
+END;
+$$;
+
+SELECT lives_ok(
+  $$
+    SELECT public.save_catalog_item_sections(
+      current_setting('test.catalog_org_a')::uuid,
+      current_setting('test.catalog_content_item')::uuid,
+      (
+        SELECT updated_at
+        FROM public.catalog_items
+        WHERE id = current_setting('test.catalog_content_item')::uuid
+      ),
+      '[]'::jsonb
+    )
+  $$,
+  'Workspace admins can save an empty section collection'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.catalog_item_sections
+    WHERE item_id = current_setting('test.catalog_content_item')::uuid
+  ),
+  0::bigint,
+  'Saving an empty collection removes the previous sections'
+);
+
+RESET ROLE;
+
 SELECT * FROM finish();
 
 ROLLBACK;

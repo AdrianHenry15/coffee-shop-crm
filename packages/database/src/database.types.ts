@@ -157,6 +157,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"catalog_website_connections": {
+                  Row: {
+                    "api_key_hash": string,"created_at": string,"enabled": boolean,"id": string,"name": string,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "api_key_hash": string,"created_at"?: string,"enabled"?: boolean,"id"?: string,"name": string,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "api_key_hash"?: string,"created_at"?: string,"enabled"?: boolean,"id"?: string,"name"?: string,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "catalog_website_connections_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"customer_activities": {
                   Row: {
                     "content": string,"created_at": string,"created_by": string,"customer_id": string,"id": string,"organization_id": string,"type": string

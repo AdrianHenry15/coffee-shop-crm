@@ -50,6 +50,14 @@ export default async function CatalogPage({
               New item
             </Link>
           )}
+
+          {canManage && (
+            <Link
+              href={`/org/${slug}/catalog/connections`}
+              className="rounded-lg border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-secondary">
+              Website connections
+            </Link>
+          )}
         </div>
       </header>
 
