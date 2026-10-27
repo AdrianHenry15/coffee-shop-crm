@@ -10,6 +10,9 @@ import {
   setPrimaryCatalogImage,
   updateCatalogImageAlt,
 } from "../../image-actions"
+import { CatalogSectionEditor } from "@/app/components/crm/catalog/catalog-section-editor"
+import { parseCatalogSections } from "@/app/lib/catalog/sections"
+import { saveCatalogSections } from "../../section-actions"
 
 export default async function EditCatalogItemPage({
   params,
@@ -28,7 +31,7 @@ export default async function EditCatalogItemPage({
   const { data: item, error: itemError } = await supabase
     .from("catalog_items")
     .select(
-      "id, name, slug, summary, status, attributes, template_version_id, price_mode, price_cents",
+      "id, name, slug, summary, status, attributes, template_version_id, price_mode, price_cents, updated_at",
     )
     .eq("id", id)
     .eq("organization_id", organization.id)
@@ -104,6 +107,20 @@ export default async function EditCatalogItemPage({
     }
   }
 
+  const { data: sections, error: sectionsError } = await supabase
+    .from("catalog_item_sections")
+    .select("id, title, kind, content")
+    .eq("organization_id", organization.id)
+    .eq("item_id", item.id)
+    .order("position", { ascending: true })
+    .order("id", { ascending: true })
+
+  if (sectionsError) {
+    throw new Error("Unable to load catalog content sections.")
+  }
+
+  const savedSections = parseCatalogSections(sections ?? [])
+
   return (
     <div className="max-w-3xl space-y-8">
       <header className="space-y-3">
@@ -167,6 +184,12 @@ export default async function EditCatalogItemPage({
         }}
         returnUrl={catalogUrl}
         onSave={updateCatalogItem.bind(null, slug, item.id)}
+      />
+      <CatalogSectionEditor
+        key={item.updated_at}
+        initialSections={savedSections}
+        fields={version.fields as unknown as CatalogField[]}
+        onSave={saveCatalogSections.bind(null, slug, item.id, item.updated_at)}
       />
     </div>
   )

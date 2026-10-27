@@ -557,6 +557,9 @@ isOneToOne: false
 "revoke_platform_administrator":
 { Args: { "p_user_id": string }; Returns: boolean
                            },
+"save_catalog_item_sections":
+{ Args: { "p_expected_updated_at": string,"p_item_id": string,"p_organization_id": string,"p_sections": Json }; Returns: undefined
+                           },
 "set_catalog_primary_image":
 { Args: { "p_image_id": string,"p_item_id": string,"p_organization_id": string }; Returns: undefined
                            },

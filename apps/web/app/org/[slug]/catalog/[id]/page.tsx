@@ -8,6 +8,7 @@ import {
   publishCatalogItem,
   unpublishCatalogItem,
 } from "../publication-actions"
+import { parseCatalogSections } from "@/app/lib/catalog/sections"
 
 function formatAttribute(
   value: CatalogAttributes[string] | undefined,
@@ -60,7 +61,7 @@ export default async function CatalogItemPage({
     notFound()
   }
 
-  const [versionResult, imagesResult] = await Promise.all([
+  const [versionResult, imagesResult, sectionsResult] = await Promise.all([
     supabase
       .from("catalog_template_versions")
       .select("fields")
@@ -76,6 +77,14 @@ export default async function CatalogItemPage({
       .order("position", { ascending: true })
       .order("created_at", { ascending: true })
       .order("id", { ascending: true }),
+
+    supabase
+      .from("catalog_item_sections")
+      .select("id, title, kind, content")
+      .eq("item_id", item.id)
+      .eq("organization_id", organization.id)
+      .order("position", { ascending: true })
+      .order("id", { ascending: true }),
   ])
 
   if (versionResult.error || !versionResult.data) {
@@ -86,8 +95,27 @@ export default async function CatalogItemPage({
     throw new Error("Unable to load catalog images.")
   }
 
+  if (sectionsResult.error) {
+    throw new Error("Unable to load catalog content sections.")
+  }
+
+  const sections = parseCatalogSections(sectionsResult.data ?? [])
+
   const fields = versionResult.data.fields as unknown as CatalogField[]
   const attributes = item.attributes as CatalogAttributes
+
+  const fieldByKey = new Map(fields.map((field) => [field.key, field]))
+
+  const sectionFieldKeys = new Set(
+    sections.flatMap((section) =>
+      section.kind === "specifications" ? section.content.field_keys : [],
+    ),
+  )
+
+  const remainingFields = fields.filter(
+    (field) => !sectionFieldKeys.has(field.key),
+  )
+
   const images = imagesResult.data ?? []
 
   const paths = images
@@ -204,14 +232,69 @@ export default async function CatalogItemPage({
         </section>
       )}
 
-      {fields.length > 0 && (
+      {sections.map((section) => (
+        <section
+          key={section.id}
+          className="space-y-4 rounded-xl border border-border bg-surface p-6">
+          <h2 className="font-mono text-lg font-semibold text-foreground">
+            {section.title}
+          </h2>
+
+          {section.kind === "text" && (
+            <p className="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-muted">
+              {section.content.text}
+            </p>
+          )}
+
+          {section.kind === "list" && (
+            <ul className="list-disc space-y-2 pl-5 text-sm text-muted">
+              {section.content.items.map((entry, index) => (
+                <li key={index} className="wrap-break-word">
+                  {entry}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {section.kind === "specifications" && (
+            <dl className="divide-y divide-border">
+              {section.content.field_keys.map((key) => {
+                const field = fieldByKey.get(key)
+
+                if (!field) return null
+
+                const value = formatAttribute(attributes[key], field.unit)
+
+                return (
+                  <div
+                    key={key}
+                    className="grid gap-2 py-3 sm:grid-cols-3 sm:gap-6">
+                    <dt className="text-sm font-medium text-foreground">
+                      {field.label}
+                    </dt>
+
+                    <dd className="whitespace-pre-wrap wrap-break-word text-sm text-muted sm:col-span-2">
+                      {value ??
+                        (field.required
+                          ? "Missing — required to publish"
+                          : "—")}
+                    </dd>
+                  </div>
+                )
+              })}
+            </dl>
+          )}
+        </section>
+      ))}
+
+      {remainingFields.length > 0 && (
         <section className="rounded-xl border border-border bg-surface p-6">
           <h2 className="font-mono text-lg font-semibold text-foreground">
             Details
           </h2>
 
           <dl className="mt-4 divide-y divide-border">
-            {fields.map((field) => {
+            {remainingFields.map((field) => {
               const value = formatAttribute(attributes[field.key], field.unit)
 
               return (
