@@ -522,6 +522,11 @@ isOneToOne: false
 "complete_stripe_subscription_upgrade":
 { Args: { "p_change_id": string,"p_customer_id": string,"p_invoice_id": string,"p_price_id": string,"p_subscription_id": string }; Returns: undefined
                            },
+"consume_catalog_website_request":
+{ Args: { "p_api_key_hash": string }; Returns: {
+              "allowed": boolean,"organization_id": string,"retry_after": number
+            }[]
+                           },
 "convert_lead_to_customer":
 { Args: { "lead_uuid": string }; Returns: string
                            },

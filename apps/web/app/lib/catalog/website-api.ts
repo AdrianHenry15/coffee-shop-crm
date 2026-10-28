@@ -56,15 +56,14 @@ export async function authorizeWebsiteRequest(
 
   const admin = await createAdminClient()
 
-  const { data: connection, error } = await admin
-    .from("catalog_website_connections")
-    .select("organization_id")
-    .eq("api_key_hash", hash)
-    .eq("enabled", true)
+  const { data: access, error } = await admin
+    .rpc("consume_catalog_website_request", {
+      p_api_key_hash: hash,
+    })
     .maybeSingle()
 
   if (error) {
-    console.error("Unable to verify catalog connection:", error)
+    console.error("Unable to authorize catalog request:", error)
 
     return {
       ok: false,
@@ -75,17 +74,46 @@ export async function authorizeWebsiteRequest(
     }
   }
 
-  if (!connection) {
+  if (!access) {
     return {
       ok: false,
       response: catalogJson({ error: "Invalid catalog credentials." }, 401),
     }
   }
 
+  if (!access.allowed) {
+    const retryAfter = Math.max(1, access.retry_after ?? 1)
+
+    const response = catalogJson(
+      {
+        error: "Catalog request limit reached. Please retry later.",
+        retryAfter,
+      },
+      429,
+    )
+
+    response.headers.set("Retry-After", String(retryAfter))
+
+    return {
+      ok: false,
+      response,
+    }
+  }
+
+  if (!access.organization_id) {
+    return {
+      ok: false,
+      response: catalogJson(
+        { error: "Catalog service temporarily unavailable." },
+        503,
+      ),
+    }
+  }
+
   return {
     ok: true,
     admin,
-    organizationId: connection.organization_id,
+    organizationId: access.organization_id,
   }
 }
 
