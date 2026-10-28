@@ -12,19 +12,6 @@ export async function syncStripeSubscription(subscriptionId: string) {
       ? subscription.customer
       : subscription.customer.id
 
-  const priceId = subscription.items.data[0]?.price.id
-
-  const plan =
-    priceId === STRIPE_PLANS.starter.priceId
-      ? "starter"
-      : priceId === STRIPE_PLANS.pro.priceId
-        ? "pro"
-        : null
-
-  if (!plan || subscription.items.data.length !== 1) {
-    throw new Error("Unknown or unsupported Stripe subscription price")
-  }
-
   const admin = createAdminClient()
 
   const { data: tracked, error: lookupError } = await admin
@@ -38,8 +25,22 @@ export async function syncStripeSubscription(subscriptionId: string) {
     throw lookupError
   }
 
+  // Ignore subscriptions owned by other applications.
   if (!tracked) {
     return
+  }
+
+  const priceId = subscription.items.data[0]?.price.id
+
+  const plan =
+    STRIPE_PLANS.starter.priceId && priceId === STRIPE_PLANS.starter.priceId
+      ? "starter"
+      : STRIPE_PLANS.pro.priceId && priceId === STRIPE_PLANS.pro.priceId
+        ? "pro"
+        : null
+
+  if (!plan || subscription.items.data.length !== 1) {
+    throw new Error("Unknown or unsupported Stripe subscription price")
   }
 
   const { data: pendingChange, error: changeError } = await admin

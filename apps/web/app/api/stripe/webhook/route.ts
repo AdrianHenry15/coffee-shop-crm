@@ -41,6 +41,32 @@ export async function POST(request: Request) {
           break
         }
 
+        const checkoutCustomerId =
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer?.id
+
+        if (!checkoutCustomerId) {
+          throw new Error("Subscription Checkout is missing its customer")
+        }
+
+        const scopeAdmin = createAdminClient()
+
+        const { data: crmBilling, error: scopeError } = await scopeAdmin
+          .from("organization_subscriptions")
+          .select("organization_id")
+          .eq("stripe_customer_id", checkoutCustomerId)
+          .maybeSingle()
+
+        if (scopeError) {
+          throw scopeError
+        }
+
+        // Other TGS applications share this Stripe account.
+        if (!crmBilling) {
+          break
+        }
+
         if (session.payment_status !== "paid") {
           throw new Error("Checkout payment is not confirmed")
         }
