@@ -20,6 +20,13 @@ values (
   '00000000-0000-0000-0000-000000000000'
 );
 
+-- These fixtures represent users who confirmed their email.
+update auth.users
+set email_confirmed_at = now()
+where id in (
+  '17171717-1717-4717-8717-171717171717'::uuid
+);
+
 set local role authenticated;
 
 select set_config(
@@ -28,10 +35,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Cascade Test Organization',
-  'cascade-test-organization-017'
-);
+select public.onboard_organization(
+      'Cascade Test Organization',
+      'cascade-test-organization-017',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 -- Create a customer.
 insert into public.customers (

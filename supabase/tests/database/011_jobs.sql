@@ -158,7 +158,9 @@ select throws_ok(
       'Unauthorized Job'
     )
   $$,
-  '42501'
+  '23503',
+  'Customer not found or access denied',
+  'Cannot create a job for another organization'
 );
 
 -- Test 5: Cannot reference another organization's customer.

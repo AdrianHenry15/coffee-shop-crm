@@ -3,7 +3,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(12);
 
 -- ============================================================
 -- Fixtures
@@ -28,6 +28,14 @@ values
   'authenticated',
   'other@test.local',
   ''
+);
+
+-- These fixtures represent users who confirmed their email.
+update auth.users
+set email_confirmed_at = now()
+where id in (
+  '00000000-0000-4000-8000-000000000031'::uuid,
+  '00000000-0000-4000-8000-000000000032'::uuid
 );
 
 insert into public.organizations (id, name, slug)
@@ -62,9 +70,14 @@ select set_config(
 
 select lives_ok(
   $$
-    select public.create_organization(
+    select public.onboard_organization(
       'Test Coffee Shop',
-      'test-coffee-shop-creation'
+      'test-coffee-shop-creation',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
     )
   $$,
   'Authenticated user can create an organization'
@@ -114,11 +127,24 @@ select is(
 -- Duplicate slug protection
 -- ============================================================
 
+-- A different user must attempt the collision. Repeating onboarding
+-- as an existing member returns that member's current organization.
+select set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-4000-8000-000000000032',
+  true
+);
+
 select throws_ok(
   $$
-    select public.create_organization(
+    select public.onboard_organization(
       'Another Coffee Shop',
-      'test-coffee-shop-creation'
+      'test-coffee-shop-creation',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
     )
   $$,
   '23505',
@@ -184,13 +210,18 @@ select set_config(
 
 select throws_ok(
   $$
-    select public.create_organization(
+    select public.onboard_organization(
       'Anonymous Organization',
-      'anonymous-org-creation'
+      'anonymous-org-creation',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
     )
   $$,
   '42501',
-  'permission denied for function create_organization',
+  'permission denied for function onboard_organization',
   'Anonymous user cannot execute organization creation'
 );
 
@@ -209,14 +240,51 @@ select set_config(
 
 select throws_ok(
   $$
-    select public.create_organization(
+    select public.onboard_organization(
       'Invalid Organization',
-      'INVALID SLUG'
+      'INVALID SLUG',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
     )
   $$,
   '22023',
-  'Invalid organization slug',
+  'Invalid workspace URL name',
   'Invalid slugs are rejected'
+);
+
+-- Authenticated callers must use the validated onboarding RPC.
+select throws_ok(
+  $$
+    select public.create_organization(
+      'Legacy Creation Attempt',
+      'legacy-creation-attempt'
+    )
+  $$,
+  '42501',
+  'permission denied for function create_organization',
+  'Authenticated users cannot bypass onboarding'
+);
+
+-- Retrying onboarding must return the original workspace.
+select is(
+  public.onboard_organization(
+    'Retry Business',
+    'retry-business-creation',
+    'retry@example.com',
+    null,
+    null,
+    null,
+    'America/New_York'
+  ),
+  (
+    select id
+    from public.organizations
+    where slug = 'test-coffee-shop-creation'
+  ),
+  'Repeated onboarding returns the existing workspace'
 );
 
 select * from finish();

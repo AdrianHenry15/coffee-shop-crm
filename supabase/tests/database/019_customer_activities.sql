@@ -173,21 +173,28 @@ select lives_ok(
   'Member can create an activity'
 );
 
--- Test 4: Member cannot create for another organization.
+-- Test 4: Cross-organization activity creation is rejected.
+-- The customer guard rejects the inaccessible customer first.
 select throws_ok(
   $$
     insert into public.customer_activities (
-      organization_id, customer_id,
-      created_by, type, content
+      organization_id,
+      customer_id,
+      created_by,
+      type,
+      content
     )
     values (
       '00000000-0000-4000-8000-000000001912',
       '00000000-0000-4000-8000-000000001922',
       '00000000-0000-4000-8000-000000001901',
-      'note', 'Unauthorized activity'
+      'note',
+      'Unauthorized activity'
     )
   $$,
-  '42501'
+  '23503',
+  'Customer not found or access denied',
+  'Member cannot create an activity for another organization'
 );
 
 -- Test 5: Member cannot impersonate another author.

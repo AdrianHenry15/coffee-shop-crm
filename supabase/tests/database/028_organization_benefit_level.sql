@@ -28,6 +28,13 @@ values (
   now()
 );
 
+-- These fixtures represent users who confirmed their email.
+update auth.users
+set email_confirmed_at = now()
+where id in (
+  'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid
+);
+
 -- Use the existing organization creation RPC.
 -- It creates the organization and owner membership.
 set local role authenticated;
@@ -38,10 +45,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Benefits Test Organization',
-  'benefits-test-org'
-);
+select public.onboard_organization(
+      'Benefits Test Organization',
+      'benefits-test-org',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 -- Capture the organization ID.
 create temporary table benefit_test_org as

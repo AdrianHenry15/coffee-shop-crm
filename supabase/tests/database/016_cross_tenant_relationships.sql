@@ -33,6 +33,14 @@ values
   '00000000-0000-0000-0000-000000000000'
 );
 
+-- These fixtures represent users who confirmed their email.
+update auth.users
+set email_confirmed_at = now()
+where id in (
+  'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid,
+  'ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid
+);
+
 -- Create both organizations using the existing RPC.
 set local role authenticated;
 
@@ -42,10 +50,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Relationship Tenant A',
-  'relationship-tenant-a-016'
-);
+select public.onboard_organization(
+      'Relationship Tenant A',
+      'relationship-tenant-a-016',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 select set_config(
   'request.jwt.claim.sub',
@@ -53,10 +66,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Relationship Tenant B',
-  'relationship-tenant-b-016'
-);
+select public.onboard_organization(
+      'Relationship Tenant B',
+      'relationship-tenant-b-016',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 -- Set up fixture records with privileged access.
 set local role postgres;

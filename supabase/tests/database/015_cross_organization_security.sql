@@ -25,6 +25,14 @@ values
   '00000000-0000-0000-0000-000000000000'
 );
 
+-- These fixtures represent users who confirmed their email.
+update auth.users
+set email_confirmed_at = now()
+where id in (
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid
+);
+
 -- Create organizations as their respective owners.
 set local role authenticated;
 
@@ -34,10 +42,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Security Tenant A',
-  'security-tenant-a-015'
-);
+select public.onboard_organization(
+      'Security Tenant A',
+      'security-tenant-a-015',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 select set_config(
   'request.jwt.claim.sub',
@@ -45,10 +58,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Security Tenant B',
-  'security-tenant-b-015'
-);
+select public.onboard_organization(
+      'Security Tenant B',
+      'security-tenant-b-015',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 -- Create records belonging to Tenant B.
 insert into public.customers (

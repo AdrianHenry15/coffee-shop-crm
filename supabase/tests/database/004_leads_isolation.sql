@@ -3,7 +3,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(13);
+select plan(15);
 
 -- ============================================================
 -- Fixtures
@@ -233,6 +233,32 @@ select is(
   ),
   'contacted',
   'Organization A lead remains unchanged'
+);
+
+-- Permanent deletion requires the lead to be trashed first.
+select results_eq(
+  $$
+    delete from public.leads
+    where id = '20000000-0000-4000-8000-000000000041'
+    returning id
+  $$,
+  $$
+    select null::uuid where false
+  $$,
+  'Active leads cannot be permanently deleted'
+);
+
+select results_eq(
+  $$
+    update public.leads
+    set deleted_at = now()
+    where id = '20000000-0000-4000-8000-000000000041'
+    returning id
+  $$,
+  $$
+    select '20000000-0000-4000-8000-000000000041'::uuid
+  $$,
+  'Organization A can move its lead to Recently deleted'
 );
 
 -- Confirm authorized deletion returns exactly one row.

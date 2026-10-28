@@ -20,6 +20,13 @@ values (
   now()
 );
 
+-- These fixtures represent users who confirmed their email.
+update auth.users
+set email_confirmed_at = now()
+where id in (
+  'ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid
+);
+
 set local role authenticated;
 
 select set_config(
@@ -28,10 +35,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Effective Limits Test',
-  'effective-limits-test'
-);
+select public.onboard_organization(
+      'Effective Limits Test',
+      'effective-limits-test',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 create temporary table effective_test_org as
 select id

@@ -30,6 +30,14 @@ values
   '00000000-0000-0000-0000-000000000000'
 );
 
+-- These fixtures represent users who confirmed their email.
+update auth.users
+set email_confirmed_at = now()
+where id in (
+  '18181818-1818-4818-8818-181818181818'::uuid,
+  '19191919-1919-4919-8919-191919191919'::uuid
+);
+
 -- Organization A.
 set local role authenticated;
 
@@ -39,10 +47,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Deletion Test A',
-  'deletion-test-a-018'
-);
+select public.onboard_organization(
+      'Deletion Test A',
+      'deletion-test-a-018',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 insert into public.customers (organization_id, name)
 select id, 'Deletion Customer A'
@@ -93,10 +106,15 @@ select set_config(
   true
 );
 
-select public.create_organization(
-  'Deletion Test B',
-  'deletion-test-b-018'
-);
+select public.onboard_organization(
+      'Deletion Test B',
+      'deletion-test-b-018',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
+    );
 
 insert into public.customers (organization_id, name)
 select id, 'Deletion Customer B'

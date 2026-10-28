@@ -30,6 +30,14 @@ values
   '00000000-0000-0000-0000-000000000000'
 );
 
+-- These fixtures represent users who confirmed their email.
+update auth.users
+set email_confirmed_at = now()
+where id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid
+);
+
 -- Authenticate as owner.
 set local role authenticated;
 
@@ -42,9 +50,14 @@ select set_config(
 -- Test 1: Organization creation.
 select lives_ok(
   $$
-    select public.create_organization(
+    select public.onboard_organization(
       'Security Test Organization',
-      'security-test-organization-014'
+      'security-test-organization-014',
+      'business@example.com',
+      null,
+      null,
+      null,
+      'America/New_York'
     )
   $$,
   'Owner can create an organization'
