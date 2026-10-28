@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { login, signup } from "@/app/auth/actions"
+import Link from "next/link"
 
 type Props = {
   mode: "login" | "signup"
@@ -159,7 +160,36 @@ export function AuthForm({ mode }: Props) {
             <p className="text-xs text-muted">Use at least 8 characters.</p>
           )}
         </div>
+
+        {isSignup && (
+          <div className="space-y-2">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-foreground">
+              Confirm password
+            </label>
+
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              maxLength={128}
+              className={inputClass}
+            />
+          </div>
+        )}
       </fieldset>
+
+      {!isSignup && (
+        <Link
+          href="/forgot-password"
+          className="block text-right text-sm font-medium text-primary hover:underline">
+          Forgot password?
+        </Link>
+      )}
 
       {error && (
         <p role="alert" className="text-sm text-red-600">

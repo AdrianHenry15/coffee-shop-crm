@@ -59,6 +59,11 @@ export async function signup(formData: FormData): Promise<AuthActionResult> {
   const email = readText(formData, "email").trim()
   const phone = readText(formData, "phone").trim()
   const password = readText(formData, "password")
+  const confirmPassword = readText(formData, "confirmPassword")
+
+  if (password !== confirmPassword) {
+    return { error: "Passwords do not match." }
+  }
 
   if (
     !firstName ||

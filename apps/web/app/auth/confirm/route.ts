@@ -1,24 +1,46 @@
-import { createClient } from "@/app/lib/supabase/server"
 import { NextResponse, type NextRequest } from "next/server"
+import { createClient } from "@/app/lib/supabase/server"
+import { getAuthConfig } from "@/app/lib/auth/config"
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
+  const { siteUrl } = getAuthConfig()
 
-  const token_hash = searchParams.get("token_hash")
+  const tokenHash = searchParams.get("token_hash")
   const type = searchParams.get("type")
 
-  if (token_hash && (type === "signup" || type === "email")) {
+  if (
+    tokenHash &&
+    (type === "signup" || type === "email" || type === "recovery")
+  ) {
     const supabase = await createClient()
 
     const { error } = await supabase.auth.verifyOtp({
-      token_hash,
+      token_hash: tokenHash,
       type,
     })
 
     if (!error) {
-      return NextResponse.redirect(new URL("/dashboard", origin))
+      const destination = type === "recovery" ? "/reset-password" : "/dashboard"
+
+      const response = NextResponse.redirect(new URL(destination, siteUrl))
+
+      response.headers.set("Cache-Control", "private, no-store")
+      response.headers.set("Referrer-Policy", "no-referrer")
+
+      return response
     }
   }
 
-  return NextResponse.redirect(new URL("/login?error=confirmation", origin))
+  const destination =
+    type === "recovery"
+      ? "/forgot-password?error=recovery"
+      : "/login?error=confirmation"
+
+  const response = NextResponse.redirect(new URL(destination, siteUrl))
+
+  response.headers.set("Cache-Control", "private, no-store")
+  response.headers.set("Referrer-Policy", "no-referrer")
+
+  return response
 }
