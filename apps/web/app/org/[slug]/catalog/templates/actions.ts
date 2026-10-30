@@ -6,6 +6,7 @@ import type {
   CatalogField,
   CreateTemplateResult,
 } from "@/app/lib/catalog/types"
+import { getCatalogCapacityError } from "@/app/lib/catalog/capacity-errors"
 
 export async function createCatalogTemplate(
   slug: string,
@@ -68,6 +69,12 @@ export async function createCatalogTemplate(
 
   if (error || typeof templateId !== "string") {
     console.error("Unable to create catalog template:", error)
+
+    const capacityError = getCatalogCapacityError(error)
+
+    if (capacityError) {
+      return { error: capacityError }
+    }
 
     return {
       error:
@@ -141,6 +148,12 @@ export async function updateCatalogTemplate(
 
   if (error || typeof savedTemplateId !== "string") {
     console.error("Unable to update catalog template:", error)
+
+    const capacityError = getCatalogCapacityError(error)
+
+    if (capacityError) {
+      return { error: capacityError }
+    }
 
     if (error?.code === "40001") {
       return {

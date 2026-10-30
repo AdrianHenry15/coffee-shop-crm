@@ -5,6 +5,7 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
 import { optimizeCatalogImage } from "@/app/lib/catalog/optimize-image"
+import { getCatalogCapacityError } from "@/app/lib/catalog/capacity-errors"
 
 type GalleryImage = {
   id: string
@@ -134,8 +135,13 @@ export function CatalogImageGallery({
 
         if (reservationError || !reservation?.object_path) {
           console.error("Unable to reserve catalog image:", reservationError)
+
+          const capacityError = getCatalogCapacityError(reservationError)
+
           throw new Error(
-            `${file.name}: unable to reserve an image slot. Check the gallery limit and your permissions.`,
+            capacityError
+              ? `${file.name}: ${capacityError}`
+              : `${file.name}: unable to reserve an image slot. Check the gallery limit and your permissions.`,
           )
         }
 
@@ -210,8 +216,9 @@ export function CatalogImageGallery({
           </h2>
 
           <p className="text-sm text-muted">
-            JPEG, PNG, or WebP. Up to 5 MB each and 20 images per item. Images
-            are resized to fit within 2,000 × 2,000 pixels before upload.
+            JPEG, PNG, or WebP. Up to 5 MB each and 20 images per item. Your
+            workspace’s total image limit also applies. Images are resized to
+            fit within 2,000 × 2,000 pixels before upload.
           </p>
 
           <p className="text-xs text-muted">

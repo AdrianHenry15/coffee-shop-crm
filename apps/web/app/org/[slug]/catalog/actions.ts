@@ -7,6 +7,7 @@ import type {
   CreateCatalogItemResult,
 } from "@/app/lib/catalog/types"
 import { readCatalogPricing } from "@/app/lib/catalog/pricing"
+import { getCatalogCapacityError } from "@/app/lib/catalog/capacity-errors"
 
 function isCatalogAttributes(value: unknown): value is CatalogAttributes {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -112,6 +113,12 @@ export async function createCatalogItem(
 
   if (error || !item) {
     console.error("Unable to create catalog item:", error)
+
+    const capacityError = getCatalogCapacityError(error)
+
+    if (capacityError) {
+      return { error: capacityError }
+    }
 
     if (error?.code === "23505") {
       return {

@@ -737,6 +737,11 @@ RESET ROLE;
 
 RESET ROLE;
 
+-- Privileged fixture setup must not inherit the previous
+-- authenticated outsider's identity.
+SELECT set_config('request.jwt.claim.sub', '', true);
+SELECT set_config('request.jwt.claims', '{}', true);
+
 DO $$
 DECLARE
   v_item_id uuid := gen_random_uuid();

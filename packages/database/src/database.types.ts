@@ -516,6 +516,14 @@ isOneToOne: false
             "associate_stripe_customer":
 { Args: { "customer_id": string,"org_id": string }; Returns: string
                            },
+"claim_catalog_image_cleanup":
+{ Args: { "p_limit"?: number }; Returns: {
+              "lease_token": string,"object_path": string
+            }[]
+                           },
+"complete_catalog_image_cleanup":
+{ Args: { "p_lease_token": string,"p_paths": (string)[] }; Returns: number
+                           },
 "complete_stripe_checkout":
 { Args: { "p_customer_id": string,"p_plan_id": string,"p_price_id": string,"p_reservation_id": string,"p_session_id": string,"p_status": string,"p_subscription_id": string }; Returns: undefined
                            },

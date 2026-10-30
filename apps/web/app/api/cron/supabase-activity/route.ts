@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/app/lib/supabase/admin"
+import { cleanupCatalogImages } from "@/app/lib/catalog/cleanup-images"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -27,20 +28,23 @@ export async function GET(request: Request) {
       .limit(1)
 
     if (error) {
-      console.error("Supabase activity check failed:", error)
-
-      return NextResponse.json(
-        { error: "Database check failed" },
-        { status: 503, headers: responseHeaders },
-      )
+      throw new Error("Database activity check failed.", { cause: error })
     }
 
-    return NextResponse.json({ ok: true }, { headers: responseHeaders })
-  } catch (error) {
-    console.error("Supabase activity check failed:", error)
+    const cleanup = await cleanupCatalogImages(admin)
 
     return NextResponse.json(
-      { error: "Database check failed" },
+      {
+        ok: true,
+        catalogImagesCleaned: cleanup.completed,
+      },
+      { headers: responseHeaders },
+    )
+  } catch (error) {
+    console.error("Scheduled database maintenance failed:", error)
+
+    return NextResponse.json(
+      { error: "Scheduled maintenance failed" },
       { status: 503, headers: responseHeaders },
     )
   }
