@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/app/lib/supabase/server"
 import { getAuthConfig } from "@/app/lib/auth/config"
+import { readCaptchaToken } from "@/app/lib/auth/captcha"
 
 export type AuthActionResult = {
   error?: string
@@ -27,14 +28,29 @@ export async function login(formData: FormData): Promise<AuthActionResult> {
     return { error: "Enter your email and password." }
   }
 
+  const captcha = readCaptchaToken(formData)
+
+  if (!captcha.success) {
+    return { error: captcha.message }
+  }
+
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
+    options: {
+      captchaToken: captcha.token,
+    },
   })
 
   if (error) {
+    if (error.code === "captcha_failed") {
+      return {
+        error:
+          "Verification failed or expired. Complete the new check and try again.",
+      }
+    }
     if (error.code === "email_not_confirmed") {
       return { error: "Confirm your email before signing in." }
     }
@@ -99,6 +115,11 @@ export async function signup(formData: FormData): Promise<AuthActionResult> {
     }
   }
 
+  const captcha = readCaptchaToken(formData)
+
+  if (!captcha.success) {
+    return { error: captcha.message }
+  }
   const { siteUrl } = getAuthConfig()
   const supabase = await createClient()
 
@@ -106,6 +127,7 @@ export async function signup(formData: FormData): Promise<AuthActionResult> {
     email,
     password,
     options: {
+      captchaToken: captcha.token,
       emailRedirectTo: `${siteUrl}/auth/confirm`,
       data: {
         first_name: firstName,

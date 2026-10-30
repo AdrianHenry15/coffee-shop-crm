@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/app/lib/supabase/server"
 import { getAuthConfig } from "@/app/lib/auth/config"
+import { readCaptchaToken } from "@/app/lib/auth/captcha"
 
 export type PasswordActionResult = {
   error?: string
@@ -27,14 +28,33 @@ export async function requestPasswordReset(
     return { error: "Enter a valid email address." }
   }
 
+  const captcha = readCaptchaToken(formData)
+
+  if (!captcha.success) {
+    return { error: captcha.message }
+  }
+
   const { siteUrl } = getAuthConfig()
   const supabase = await createClient()
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/confirm`,
+    captchaToken: captcha.token,
   })
 
   if (error) {
+    if (error.code === "captcha_failed") {
+      return {
+        error:
+          "Verification failed or expired. Complete the new check and try again.",
+      }
+    }
+
+    if (error.status === 429) {
+      return {
+        error: "Too many requests. Please wait before trying again.",
+      }
+    }
     console.error("Password reset request failed:", {
       code: error.code,
       status: error.status,

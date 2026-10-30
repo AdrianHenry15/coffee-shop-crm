@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/app/lib/supabase/server"
 import { getAuthConfig } from "@/app/lib/auth/config"
 import type { AccountActionResult } from "./actions"
+import { readCaptchaToken } from "@/app/lib/auth/captcha"
 
 function readText(formData: FormData, name: string) {
   const value = formData.get(name)
@@ -52,14 +53,33 @@ export async function requestEmailChange(
     }
   }
 
+  const captcha = readCaptchaToken(formData)
+
+  if (!captcha.success) {
+    return {
+      success: false,
+      message: captcha.message,
+    }
+  }
+
   // Use the server-verified account email, never a submitted user ID.
   const { data: verified, error: passwordError } =
     await supabase.auth.signInWithPassword({
       email: user.email,
       password,
+      options: {
+        captchaToken: captcha.token,
+      },
     })
 
   if (passwordError) {
+    if (passwordError.code === "captcha_failed") {
+      return {
+        success: false,
+        message:
+          "Verification failed or expired. Complete the new check and try again.",
+      }
+    }
     return {
       success: false,
       message:

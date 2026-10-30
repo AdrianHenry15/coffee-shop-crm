@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@coffeeshopcrm/database": "workspace:*",
+    "@marsidev/react-turnstile": "^1.6.3",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "date-fns-tz": "^3.2.0",

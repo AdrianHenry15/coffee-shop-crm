@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { login, signup } from "@/app/auth/actions"
 import Link from "next/link"
+import { AuthCaptcha } from "@/app/components/auth/auth-captcha"
 
 type Props = {
   mode: "login" | "signup"
@@ -16,6 +17,7 @@ export function AuthForm({ mode }: Props) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const [captchaVersion, setCaptchaVersion] = useState(0)
 
   const isSignup = mode === "signup"
 
@@ -39,6 +41,8 @@ export function AuthForm({ mode }: Props) {
         }
       } catch {
         setError("Unable to process your request. Please try again.")
+      } finally {
+        setCaptchaVersion((version) => version + 1)
       }
     })
   }
@@ -182,6 +186,11 @@ export function AuthForm({ mode }: Props) {
           </div>
         )}
       </fieldset>
+
+      <AuthCaptcha
+        key={captchaVersion}
+        action={isSignup ? "signup" : "login"}
+      />
 
       {!isSignup && (
         <Link

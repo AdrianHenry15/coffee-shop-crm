@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { requestEmailChange } from "./email-actions"
 import type { AccountActionResult } from "./actions"
+import { AuthCaptcha } from "../components/auth/auth-captcha"
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
@@ -12,6 +13,7 @@ export function EmailChangeForm({ currentEmail }: { currentEmail: string }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [result, setResult] = useState<AccountActionResult | null>(null)
+  const [captchaVersion, setCaptchaVersion] = useState(0)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -37,6 +39,8 @@ export function EmailChangeForm({ currentEmail }: { currentEmail: string }) {
           success: false,
           message: "Unable to request the email change. Please try again.",
         })
+      } finally {
+        setCaptchaVersion((version) => version + 1)
       }
     })
   }
@@ -108,6 +112,8 @@ export function EmailChangeForm({ currentEmail }: { currentEmail: string }) {
           />
         </div>
       </fieldset>
+
+      <AuthCaptcha key={captchaVersion} action="email_change" />
 
       {result && (
         <p

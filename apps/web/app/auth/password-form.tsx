@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState, useTransition, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { requestPasswordReset, resetPassword } from "./password-actions"
+import { AuthCaptcha } from "@/app/components/auth/auth-captcha"
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
@@ -13,6 +14,7 @@ export function PasswordForm({ mode }: { mode: "request" | "reset" }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [captchaVersion, setCaptchaVersion] = useState(0)
 
   const isReset = mode === "reset"
 
@@ -45,6 +47,8 @@ export function PasswordForm({ mode }: { mode: "request" | "reset" }) {
         }
       } catch {
         setError("Unable to process your request. Please try again.")
+      } finally {
+        setCaptchaVersion((version) => version + 1)
       }
     })
   }
@@ -134,6 +138,8 @@ export function PasswordForm({ mode }: { mode: "request" | "reset" }) {
           </div>
         )}
       </fieldset>
+
+      {!isReset && <AuthCaptcha key={captchaVersion} action="password_reset" />}
 
       {error && (
         <p role="alert" className="text-sm text-red-600">
