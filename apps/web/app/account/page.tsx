@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/server"
 import { AccountForm } from "./account-form"
+import { EmailChangeForm } from "./email-change-form"
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -91,6 +92,11 @@ export default async function AccountPage() {
             This is the email you use to sign in. Each workspace has its own
             business contact email.
           </p>
+          {user.email && (
+            <div className="border-t border-border pt-5">
+              <EmailChangeForm currentEmail={user.email} />
+            </div>
+          )}
         </section>
       </div>
     </main>
