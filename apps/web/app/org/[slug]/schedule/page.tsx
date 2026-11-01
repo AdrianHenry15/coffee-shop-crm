@@ -22,7 +22,14 @@ export default async function SchedulePage({ params }: Props) {
         status,
         customer_id,
         scheduled_start,
-        scheduled_end
+        scheduled_end,
+        job_employee_assignments (
+          employee_id,
+          employees (
+            name,
+            status
+          )
+        )
       `,
       )
       .eq("organization_id", organization.id)
@@ -62,6 +69,19 @@ export default async function SchedulePage({ params }: Props) {
       customerName: customerNames.get(job.customer_id) ?? "Unknown Customer",
       scheduled_start: job.scheduled_start,
       scheduled_end: job.scheduled_end,
+      assignedEmployees: (job.job_employee_assignments ?? [])
+        .flatMap((assignment) =>
+          assignment.employees
+            ? [
+                {
+                  id: assignment.employee_id,
+                  name: assignment.employees.name,
+                  status: assignment.employees.status,
+                },
+              ]
+            : [],
+        )
+        .sort((a, b) => a.name.localeCompare(b.name)),
     }))
 
   return (

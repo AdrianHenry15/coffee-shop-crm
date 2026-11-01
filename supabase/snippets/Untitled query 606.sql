@@ -1,22 +1,23 @@
 SELECT
-  item.slug,
-  (
-    SELECT count(*)
-    FROM public.catalog_item_images AS image
-    WHERE image.item_id = item.id
-      AND image.organization_id = item.organization_id
-  ) AS gallery_records,
-  (
-    SELECT count(*)
-    FROM storage.objects AS object
-    WHERE object.bucket_id = 'catalog-images'
-      AND split_part(object.name, '/', 1) =
-        item.organization_id::text
-      AND split_part(object.name, '/', 2) = item.id::text
-  ) AS stored_files
-FROM public.catalog_items AS item
-JOIN public.organizations AS organization
-  ON organization.id = item.organization_id
-WHERE organization.slug = 'test-company'
-  AND item.slug IN ('cleanup-keep', 'cleanup-remove')
-ORDER BY item.slug;
+  'policy' AS definition_type,
+  policyname AS name,
+  jsonb_build_object(
+    'command', cmd,
+    'roles', roles,
+    'using', qual,
+    'check', with_check
+  )::text AS definition
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND tablename = 'organization_members'
+
+UNION ALL
+
+SELECT
+  'trigger',
+  trigger.tgname,
+  pg_get_triggerdef(trigger.oid)
+FROM pg_trigger AS trigger
+WHERE trigger.tgrelid =
+  'public.organization_members'::regclass
+  AND NOT trigger.tgisinternal;

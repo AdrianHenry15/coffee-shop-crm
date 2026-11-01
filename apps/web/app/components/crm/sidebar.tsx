@@ -6,6 +6,18 @@ import { usePathname } from "next/navigation"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 import { logout } from "@/app/auth/actions"
 import { ThemeSwitcher } from "./theme-switcher"
+import {
+  LayoutDashboard,
+  Funnel,
+  UserRound,
+  ClipboardList,
+  BriefcaseBusiness,
+  Package,
+  CalendarDays,
+  UsersRound,
+  Settings,
+  CircleUserRound,
+} from "lucide-react"
 
 type Organization = {
   id: string
@@ -16,20 +28,26 @@ type Organization = {
 type Props = {
   currentSlug: string
   organizations: Organization[]
+  canManageEmployees?: boolean
 }
 
 const navigation = [
-  { label: "Dashboard", path: "dashboard" },
-  { label: "Leads", path: "leads" },
-  { label: "Customers", path: "customers" },
-  { label: "Estimates", path: "estimates" },
-  { label: "Jobs", path: "jobs" },
-  { label: "Catalog", path: "catalog" },
-  { label: "Schedule", path: "schedule" },
-  { label: "Settings", path: "settings" },
+  { label: "Dashboard", path: "dashboard", icon: LayoutDashboard },
+  { label: "Leads", path: "leads", icon: Funnel },
+  { label: "Customers", path: "customers", icon: UserRound },
+  { label: "Estimates", path: "estimates", icon: ClipboardList },
+  { label: "Jobs", path: "jobs", icon: BriefcaseBusiness },
+  { label: "Catalog", path: "catalog", icon: Package },
+  { label: "Schedule", path: "schedule", icon: CalendarDays },
+  { label: "Employees", path: "employees", icon: UsersRound },
+  { label: "Settings", path: "settings", icon: Settings },
 ]
 
-export function Sidebar({ currentSlug, organizations }: Props) {
+export function Sidebar({
+  currentSlug,
+  organizations,
+  canManageEmployees,
+}: Props) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -88,32 +106,46 @@ export function Sidebar({ currentSlug, organizations }: Props) {
         </div>
 
         <nav className="mt-8 flex-1 space-y-1">
-          {navigation.map((item) => {
-            const href = `/org/${currentSlug}/${item.path}`
-            const active = pathname === href || pathname.startsWith(`${href}/`)
+          {navigation
+            .filter((item) => item.path !== "employees" || canManageEmployees)
+            .map((item) => {
+              const Icon = item.icon
+              const href = `/org/${currentSlug}/${item.path}`
+              const active =
+                pathname === href || pathname.startsWith(`${href}/`)
 
-            return (
-              <Link
-                key={item.path}
-                href={href}
-                onClick={() => setOpen(false)}
-                aria-current={active ? "page" : undefined}
-                className={`block rounded-md px-3 py-2 text-sm transition-colors ${
-                  active
-                    ? "bg-[#006241] font-medium text-white"
-                    : "text-sidebar-muted hover:bg-white/10 hover:text-white"
-                }`}>
-                {item.label}
-              </Link>
-            )
-          })}
+              return (
+                <Link
+                  key={item.path}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                    active
+                      ? "bg-[#006241] font-medium text-white"
+                      : "text-sidebar-muted hover:bg-white/10 hover:text-white"
+                  }`}>
+                  <Icon
+                    aria-hidden="true"
+                    className="h-4.5 w-4.5 shrink-0"
+                    strokeWidth={1.7}
+                  />
+                  <span>{item.label}</span>
+                </Link>
+              )
+            })}
         </nav>
 
         <Link
           href="/account"
           onClick={() => setOpen(false)}
-          className="mb-4 block rounded-md px-3 py-2 text-sm text-sidebar-muted transition-colors hover:bg-white/10 hover:text-white">
-          Your account
+          className="mb-4 flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-muted transition-colors hover:bg-white/10 hover:text-white">
+          <CircleUserRound
+            aria-hidden="true"
+            className="h-4.5 w-4.5 shrink-0"
+            strokeWidth={1.7}
+          />
+          <span>Your Account</span>
         </Link>
 
         <div className="mb-5 border-t border-white/10 pt-5">

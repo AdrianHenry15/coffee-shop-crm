@@ -13,7 +13,7 @@ export default async function OrganizationLayout({
   const { slug } = await params
 
   // RLS verifies access to this organization.
-  await getOrganization(slug)
+  const organization = await getOrganization(slug)
 
   const supabase = await createClient()
 
@@ -25,7 +25,7 @@ export default async function OrganizationLayout({
 
   const { data: memberships, error } = await supabase
     .from("organization_members")
-    .select("organizations(id, name, slug)")
+    .select("organization_id, role, organizations(id, name, slug)")
     .eq("user_id", userData.user.id)
     .eq("status", "active")
 
@@ -33,13 +33,23 @@ export default async function OrganizationLayout({
     throw new Error("Unable to load workspaces.")
   }
 
+  const canManageEmployees = (memberships ?? []).some(
+    (membership) =>
+      membership.organization_id === organization.id &&
+      ["owner", "admin"].includes(membership.role),
+  )
+
   const organizations = (memberships ?? []).flatMap((membership) =>
     membership.organizations ? [membership.organizations] : [],
   )
 
   return (
     <div className="min-h-screen bg-background md:flex">
-      <Sidebar currentSlug={slug} organizations={organizations} />
+      <Sidebar
+        canManageEmployees={canManageEmployees}
+        currentSlug={slug}
+        organizations={organizations}
+      />
 
       <main className="min-w-0 flex-1 bg-background px-4 py-6 md:px-8 md:py-8 lg:px-10">
         <div className="mx-auto w-full max-w-7xl">{children}</div>

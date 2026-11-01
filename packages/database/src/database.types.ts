@@ -235,6 +235,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"employees": {
+                  Row: {
+                    "created_at": string,"email": string | null,"id": string,"job_title": string | null,"membership_id": string | null,"name": string,"organization_id": string,"phone": string | null,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"email"?: string | null,"id"?: string,"job_title"?: string | null,"membership_id"?: string | null,"name": string,"organization_id": string,"phone"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"email"?: string | null,"id"?: string,"job_title"?: string | null,"membership_id"?: string | null,"name"?: string,"organization_id"?: string,"phone"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "employees_membership_same_org_fkey"
+      columns: ["organization_id","membership_id"]
+isOneToOne: true
+      referencedRelation: "organization_members"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "employees_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"estimate_items": {
                   Row: {
                     "created_at": string,"description": string,"estimate_id": string,"id": string,"organization_id": string,"position": number,"quantity": number,"unit_price_cents": number
@@ -275,6 +301,38 @@ isOneToOne: false
       referencedColumns: ["id","organization_id"]
     },{
       foreignKeyName: "estimates_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"job_employee_assignments": {
+                  Row: {
+                    "created_at": string,"employee_id": string,"job_id": string,"organization_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"employee_id": string,"job_id": string,"organization_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"employee_id"?: string,"job_id"?: string,"organization_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "job_employee_assignments_employee_same_org_fkey"
+      columns: ["organization_id","employee_id"]
+isOneToOne: false
+      referencedRelation: "employees"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "job_employee_assignments_job_same_org_fkey"
+      columns: ["job_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "jobs"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "job_employee_assignments_organization_id_fkey"
       columns: ["organization_id"]
 isOneToOne: false
       referencedRelation: "organizations"
@@ -513,7 +571,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "associate_stripe_customer":
+            "accept_organization_invitation":
+{ Args: { "p_invitation_id": string }; Returns: string
+                           },
+"associate_stripe_customer":
 { Args: { "customer_id": string,"org_id": string }; Returns: string
                            },
 "claim_catalog_image_cleanup":
@@ -547,6 +608,9 @@ isOneToOne: false
 "create_organization":
 { Args: { "org_name": string,"org_slug": string }; Returns: string
                            },
+"create_organization_invitation":
+{ Args: { "p_email": string,"p_organization_id": string,"p_role": string }; Returns: string
+                           },
 "delete_estimate":
 { Args: { "p_estimate_id": string,"p_organization_id": string }; Returns: undefined
                            },
@@ -576,6 +640,16 @@ isOneToOne: false
 "grant_platform_administrator":
 { Args: { "p_email": string }; Returns: string
                            },
+"list_my_organization_invitations":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "expires_at": string,"id": string,"organization_name": string,"organization_slug": string,"role": string
+            }[]
+                           },
+"list_organization_invitations":
+{ Args: { "p_organization_id": string }; Returns: {
+              "created_at": string,"email": string,"expires_at": string,"id": string,"role": string,"status": string
+            }[]
+                           },
 "list_platform_administrators":
 { Args: Record<PropertyKey, never>; Returns: {
               "created_at": string,"email": string,"role": string,"user_id": string
@@ -583,6 +657,12 @@ isOneToOne: false
                            },
 "onboard_organization":
 { Args: { "p_address": string,"p_email": string,"p_name": string,"p_phone": string,"p_slug": string,"p_timezone": string,"p_website": string }; Returns: string
+                           },
+"remove_organization_member":
+{ Args: { "p_member_id": string,"p_organization_id": string }; Returns: undefined
+                           },
+"revoke_organization_invitation":
+{ Args: { "p_invitation_id": string,"p_organization_id": string }; Returns: undefined
                            },
 "revoke_organization_partner":
 { Args: { "org_uuid": string }; Returns: undefined
@@ -610,6 +690,9 @@ isOneToOne: false
                            },
 "update_estimate_items":
 { Args: { "p_estimate_id": string,"p_items": Json,"p_organization_id": string }; Returns: undefined
+                           },
+"update_organization_member":
+{ Args: { "p_member_id": string,"p_organization_id": string,"p_role": string,"p_status": string }; Returns: undefined
                            }
           }
           Enums: {

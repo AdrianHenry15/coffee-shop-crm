@@ -4,6 +4,7 @@ import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
 import { JobManager } from "@/app/components/crm/managers/job-manager"
 import { formatOrganizationDateTime } from "@/app/lib/dates"
+import { JobEmployeePanel } from "@/app/components/crm/job-employee-panel"
 
 type Props = {
   params: Promise<{
@@ -158,6 +159,12 @@ export default async function JobDetailsPage({ params }: Props) {
           )}
         </section>
       )}
+
+      <JobEmployeePanel
+        slug={slug}
+        organizationId={organization.id}
+        jobId={job.id}
+      />
 
       <JobManager
         key={job.updated_at}

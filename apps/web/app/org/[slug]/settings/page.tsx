@@ -5,6 +5,7 @@ import { OrganizationProfile } from "@/app/components/crm/organization-profile"
 import { OrganizationMembers } from "@/app/components/crm/organization-members"
 import { OrganizationSubscription } from "@/app/components/crm/organization-subscription"
 import { OrganizationPlans } from "@/app/components/crm/organization-plans"
+import { OrganizationInvitations } from "@/app/components/crm/organization-invitations"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -47,13 +48,17 @@ export default async function SettingsPage({ params }: Props) {
     throw new Error("Authentication required")
   }
 
-  const { data: membership } = await supabase
+  const { data: membership, error: membershipError } = await supabase
     .from("organization_members")
     .select("role")
     .eq("organization_id", organization.id)
     .eq("user_id", user.id)
     .eq("status", "active")
     .maybeSingle()
+
+  if (membershipError || !membership) {
+    throw new Error("Unable to verify workspace access.")
+  }
 
   const { data: members, error: membersError } = await supabase
     .from("organization_members")
@@ -91,6 +96,16 @@ export default async function SettingsPage({ params }: Props) {
   })
 
   const canEdit = membership?.role === "owner"
+
+  const { data: invitations, error: invitationsError } = canEdit
+    ? await supabase.rpc("list_organization_invitations", {
+        p_organization_id: organization.id,
+      })
+    : { data: [], error: null }
+
+  if (invitationsError) {
+    throw new Error("Unable to load workspace invitations.")
+  }
 
   return (
     <main className="mx-auto max-w-5xl space-y-8">
@@ -173,7 +188,16 @@ export default async function SettingsPage({ params }: Props) {
           <OrganizationMembers
             members={membersWithProfiles}
             currentUserId={user.id}
+            slug={slug}
+            canManage={canEdit}
           />
+
+          {canEdit && (
+            <OrganizationInvitations
+              slug={slug}
+              invitations={invitations ?? []}
+            />
+          )}
         </section>
       </div>
     </main>

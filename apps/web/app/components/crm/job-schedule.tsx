@@ -11,6 +11,11 @@ type Job = {
   customerName: string
   scheduled_start: string
   scheduled_end: string | null
+  assignedEmployees?: {
+    id: string
+    name: string
+    status: string
+  }[]
 }
 
 type Props = {
@@ -132,7 +137,7 @@ export function JobSchedule({ slug, timezone, jobs }: Props) {
       </div>
 
       <div className="overflow-x-auto pb-2">
-        <div className="grid min-w-[770px] grid-cols-7 gap-3">
+        <div className="grid min-w-192.5 grid-cols-7 gap-3">
           {days.map((day) => {
             const dayJobs = jobs
               .filter((job) => {
@@ -206,6 +211,20 @@ export function JobSchedule({ slug, timezone, jobs }: Props) {
                         <p className="truncate text-xs text-muted">
                           {job.customerName}
                         </p>
+                        {Boolean(job.assignedEmployees?.length) && (
+                          <div className="space-y-1">
+                            {job.assignedEmployees?.map((employee) => (
+                              <p
+                                key={employee.id}
+                                className="wrap-break-word text-xs text-muted">
+                                {employee.name}
+                                {employee.status !== "active"
+                                  ? " (inactive)"
+                                  : ""}
+                              </p>
+                            ))}
+                          </div>
+                        )}
 
                         <span className="inline-block rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">
                           {statusLabels[job.status] ?? job.status}

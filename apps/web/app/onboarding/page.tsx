@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { logout } from "@/app/auth/actions"
 import { createClient } from "@/app/lib/supabase/server"
 import { OnboardingForm } from "./onboarding-form"
+import { WorkspaceInvitations } from "@/app/components/crm/workspace-invitations"
 
 export default async function OnboardingPage() {
   const supabase = await createClient()
@@ -28,6 +29,14 @@ export default async function OnboardingPage() {
     redirect("/dashboard")
   }
 
+  const { data: invitations, error: invitationsError } = await supabase.rpc(
+    "list_my_organization_invitations",
+  )
+
+  if (invitationsError) {
+    throw new Error("Unable to load workspace invitations.")
+  }
+
   const timezones = [
     ...new Set(["UTC", ...Intl.supportedValuesOf("timeZone")]),
   ].sort()
@@ -35,6 +44,7 @@ export default async function OnboardingPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-10">
       <div className="mx-auto max-w-xl space-y-6">
+        <WorkspaceInvitations invitations={invitations ?? []} />
         <header className="space-y-2">
           <p className="font-mono text-xs font-medium uppercase tracking-widest text-primary">
             CoffeeShopCRM / Business setup
