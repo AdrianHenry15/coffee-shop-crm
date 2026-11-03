@@ -26,11 +26,12 @@ type Props = {
   slug: string
   timezone: string
   job: Job
+  canManage: boolean
 }
 
 const inputClass =
   "w-full min-w-0 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
-export function JobManager({ slug, timezone, job }: Props) {
+export function JobManager({ slug, timezone, job, canManage }: Props) {
   const router = useRouter()
 
   const [title, setTitle] = useState(job.title)
@@ -71,9 +72,10 @@ export function JobManager({ slug, timezone, job }: Props) {
   }
 
   function changeStatus(value: JobStatus) {
+    if (pending) return
     startTransition(async () => {
       try {
-        await updateJobStatus(slug, job.id, value)
+        await updateJobStatus(slug, job.id, value, status)
 
         setStatus(value)
         toast.success("Job status updated.")
@@ -100,6 +102,53 @@ export function JobManager({ slug, timezone, job }: Props) {
         )
       }
     })
+  }
+
+  if (!canManage) {
+    const nextStatus: JobStatus | null =
+      status === "scheduled"
+        ? "in_progress"
+        : status === "in_progress"
+          ? "completed"
+          : null
+
+    return (
+      <section className="space-y-4 rounded-xl border border-border bg-surface p-6">
+        <div className="space-y-2">
+          <h2 className="font-mono text-lg font-semibold text-foreground">
+            Job progress
+          </h2>
+
+          <p className="text-sm text-muted">
+            {status === "scheduled"
+              ? "Start this job when work begins."
+              : status === "in_progress"
+                ? "Mark this job complete when the work is finished."
+                : status === "completed"
+                  ? "This job is complete."
+                  : "This job is canceled."}
+          </p>
+        </div>
+
+        {nextStatus && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => changeStatus(nextStatus)}
+            className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            {pending
+              ? "Updating..."
+              : nextStatus === "in_progress"
+                ? "Start job"
+                : "Mark complete"}
+          </button>
+        )}
+
+        <p className="text-xs text-muted">
+          Workspace owners and admins manage job details and scheduling.
+        </p>
+      </section>
+    )
   }
 
   return (

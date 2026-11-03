@@ -16,12 +16,14 @@ type Lead = ManagedContact & {
 type Props = {
   slug: string
   leads: Lead[]
+  canManageDeletion?: boolean
 }
 
-export function LeadManager({ slug, leads }: Props) {
+export function LeadManager({ slug, leads, canManageDeletion = false }: Props) {
   return (
     <ContactManager
-      key={slug}
+      key={`${slug}:${canManageDeletion}`}
+      canManageDeletion={canManageDeletion}
       slug={slug}
       entity="leads"
       contacts={leads}

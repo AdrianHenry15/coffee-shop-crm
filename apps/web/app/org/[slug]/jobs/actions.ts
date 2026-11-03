@@ -193,6 +193,7 @@ export async function updateJobStatus(
   slug: string,
   jobId: string,
   status: JobStatus,
+  expectedStatus: JobStatus,
 ) {
   const validStatuses: JobStatus[] = [
     "scheduled",
@@ -201,24 +202,37 @@ export async function updateJobStatus(
     "canceled",
   ]
 
-  if (!validStatuses.includes(status)) {
+  if (
+    !validStatuses.includes(status) ||
+    !validStatuses.includes(expectedStatus)
+  ) {
     throw new Error("Invalid job status.")
   }
 
   const { supabase, organization } = await getJob(slug, jobId)
 
-  const { error } = await supabase
-    .from("jobs")
-    .update({ status })
-    .eq("id", jobId)
-    .eq("organization_id", organization.id)
+  const { error } = await supabase.rpc("set_job_progress", {
+    p_organization_id: organization.id,
+    p_job_id: jobId,
+    p_status: status,
+    p_expected_status: expectedStatus,
+  })
 
   if (error) {
-    throw new Error(error.message)
+    if (error.code === "40001") {
+      throw new Error("This job changed. Reload before updating its status.")
+    }
+
+    if (error.code === "42501") {
+      throw new Error("You do not have permission to make this status change.")
+    }
+
+    throw new Error("Unable to update job progress.")
   }
 
   revalidatePath(`/org/${slug}/jobs`)
   revalidatePath(`/org/${slug}/jobs/${jobId}`)
+  revalidatePath(`/org/${slug}/schedule`)
 }
 
 export async function updateJob(

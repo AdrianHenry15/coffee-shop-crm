@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { getOrganization } from "@/lib/organizations"
-import { createClient } from "@/app/lib/supabase/server"
+import { getWorkspaceAccess } from "@/app/lib/workspace-access"
 import { EstimateForm } from "@/app/components/crm/forms/estimate-form"
 import { Suspense } from "react"
 import { RedirectToast } from "@/app/components/crm/ui/redirect-toast"
@@ -22,8 +21,8 @@ const estimateMessages = {
 export default async function EstimatesPage({ params }: Props) {
   const { slug } = await params
 
-  const organization = await getOrganization(slug)
-  const supabase = await createClient()
+  const { organization, supabase, canManageBusiness } =
+    await getWorkspaceAccess(slug)
 
   const [customersResult, estimatesResult] = await Promise.all([
     supabase
@@ -87,7 +86,9 @@ export default async function EstimatesPage({ params }: Props) {
         </h1>
 
         <p className="mt-2 text-sm text-muted">
-          Create and manage customer estimates for {organization.name}.
+          {canManageBusiness
+            ? `Create and manage customer estimates for ${organization.name}.`
+            : `View customer estimates for ${organization.name}.`}
         </p>
       </header>
 
@@ -115,8 +116,9 @@ export default async function EstimatesPage({ params }: Props) {
             </p>
 
             <p className="text-sm text-muted">
-              Add a customer or restore one from Recently Deleted before
-              creating an estimate.
+              {canManageBusiness
+                ? "Create an estimate for a customer using the form below."
+                : "Estimates will appear here when a workspace owner or admin creates them."}
             </p>
           </div>
         ) : (
@@ -164,33 +166,35 @@ export default async function EstimatesPage({ params }: Props) {
         )}
       </section>
 
-      <section className="rounded-xl border border-border bg-surface p-6">
-        <div className="mb-6">
-          <h2 className="font-mono text-lg font-semibold text-foreground">
-            Create estimate
-          </h2>
+      {canManageBusiness && (
+        <section className="rounded-xl border border-border bg-surface p-6">
+          <div className="mb-6">
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Create estimate
+            </h2>
 
-          <p className="mt-1 text-sm text-muted">
-            Prepare a new estimate for an existing customer.
-          </p>
-        </div>
-
-        {customers.length > 0 ? (
-          <EstimateForm slug={slug} customers={customers} />
-        ) : (
-          <div className="rounded-lg border border-dashed border-border bg-surface-secondary p-6">
-            <p className="text-sm text-muted">
-              You need at least one customer before creating an estimate.
+            <p className="mt-1 text-sm text-muted">
+              Prepare a new estimate for an existing customer.
             </p>
-
-            <Link
-              href={`/org/${slug}/customers`}
-              className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">
-              Go to customers →
-            </Link>
           </div>
-        )}
-      </section>
+
+          {customers.length > 0 ? (
+            <EstimateForm slug={slug} customers={customers} />
+          ) : (
+            <div className="rounded-lg border border-dashed border-border bg-surface-secondary p-6">
+              <p className="text-sm text-muted">
+                You need at least one customer before creating an estimate.
+              </p>
+
+              <Link
+                href={`/org/${slug}/customers`}
+                className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">
+                Go to customers →
+              </Link>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   )
 }

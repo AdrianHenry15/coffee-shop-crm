@@ -4,6 +4,24 @@ import { createClient } from "@/app/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+async function requireEstimateManager(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  userId: string,
+) {
+  const { data: membership, error } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("organization_id", organizationId)
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .maybeSingle()
+
+  if (error || !membership || !["owner", "admin"].includes(membership.role)) {
+    throw new Error("Only workspace owners and admins can manage estimates.")
+  }
+}
+
 export async function createEstimate(formData: FormData) {
   const slug = String(formData.get("slug") ?? "")
   const customerId = String(formData.get("customerId") ?? "")
@@ -57,6 +75,8 @@ export async function createEstimate(formData: FormData) {
     throw new Error("Organization not found.")
   }
 
+  await requireEstimateManager(supabase, organization.id, authData.user.id)
+
   const { data: estimateId, error } = await supabase.rpc("create_estimate", {
     p_organization_id: organization.id,
     p_customer_id: customerId,
@@ -101,6 +121,8 @@ async function getEstimate(slug: string, estimateId: string) {
     throw new Error("Organization not found.")
   }
 
+  await requireEstimateManager(supabase, organization.id, userData.user.id)
+
   const { data: estimate, error: estimateError } = await supabase
     .from("estimates")
     .select("id, status")
@@ -124,20 +146,33 @@ export async function updateEstimateStatus(
     throw new Error("Invalid estimate status.")
   }
 
-  const { supabase, organization } = await getEstimate(slug, estimateId)
+  const { supabase, organization, estimate } = await getEstimate(
+    slug,
+    estimateId,
+  )
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("estimates")
     .update({ status })
     .eq("id", estimateId)
     .eq("organization_id", organization.id)
+    .eq("status", estimate.status)
+    .select("id")
+    .maybeSingle()
 
   if (error) {
     throw new Error("Unable to update estimate status.")
   }
 
+  if (!updated) {
+    throw new Error(
+      "This estimate changed or your access changed. Reload before updating.",
+    )
+  }
+
   revalidatePath(`/org/${slug}/estimates`)
   revalidatePath(`/org/${slug}/estimates/${estimateId}`)
+  revalidatePath(`/org/${slug}/jobs`)
 }
 
 export async function updateEstimateNotes(
@@ -145,16 +180,28 @@ export async function updateEstimateNotes(
   estimateId: string,
   notes: string,
 ) {
+  if (typeof notes !== "string") {
+    throw new Error("Invalid estimate notes.")
+  }
+
   const { supabase, organization } = await getEstimate(slug, estimateId)
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("estimates")
     .update({ notes: notes.trim() || null })
     .eq("id", estimateId)
     .eq("organization_id", organization.id)
+    .select("id")
+    .maybeSingle()
 
   if (error) {
     throw new Error("Unable to update estimate notes.")
+  }
+
+  if (!updated) {
+    throw new Error(
+      "This estimate is unavailable or your access changed. Reload the page.",
+    )
   }
 
   revalidatePath(`/org/${slug}/estimates`)
@@ -193,6 +240,8 @@ export async function updateEstimateItems(
 
   for (const item of items) {
     if (
+      !item ||
+      typeof item !== "object" ||
       typeof item.description !== "string" ||
       !item.description.trim() ||
       item.description.length > 500 ||

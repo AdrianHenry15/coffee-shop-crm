@@ -1,9 +1,8 @@
-import { getOrganization } from "@/lib/organizations"
-import { createClient } from "@/app/lib/supabase/server"
 import { LeadManager } from "@/app/components/crm/managers/lead-manager"
 import { LeadForm } from "@/app/components/crm/forms/lead-form"
 import { CsvImporter } from "@/app/components/crm/csv-importer"
 import { importLeads } from "./actions"
+import { getWorkspaceAccess } from "@/app/lib/workspace-access"
 
 export default async function LeadsPage({
   params,
@@ -12,8 +11,8 @@ export default async function LeadsPage({
 }) {
   const { slug } = await params
 
-  const organization = await getOrganization(slug)
-  const supabase = await createClient()
+  const { organization, supabase, canManageBusiness } =
+    await getWorkspaceAccess(slug)
 
   const { data: leads, error } = await supabase
     .from("leads")
@@ -106,7 +105,11 @@ export default async function LeadsPage({
           </div>
         </div>
 
-        <LeadManager slug={slug} leads={leadsWithCustomers} />
+        <LeadManager
+          canManageDeletion={canManageBusiness}
+          slug={slug}
+          leads={leadsWithCustomers}
+        />
       </section>
     </div>
   )

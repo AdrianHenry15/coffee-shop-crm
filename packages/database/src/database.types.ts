@@ -676,6 +676,9 @@ isOneToOne: false
 "set_catalog_primary_image":
 { Args: { "p_image_id": string,"p_item_id": string,"p_organization_id": string }; Returns: undefined
                            },
+"set_job_progress":
+{ Args: { "p_expected_status": string,"p_job_id": string,"p_organization_id": string,"p_status": string }; Returns: undefined
+                           },
 "set_organization_maintenance":
 { Args: { "ends_at": string,"org_uuid": string,"starts_at": string }; Returns: undefined
                            },

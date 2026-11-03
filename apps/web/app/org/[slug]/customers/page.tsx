@@ -1,5 +1,4 @@
-import { getOrganization } from "@/lib/organizations"
-import { createClient } from "@/app/lib/supabase/server"
+import { getWorkspaceAccess } from "@/app/lib/workspace-access"
 import { CustomerManager } from "@/app/components/crm/managers/customer-manager"
 import { CustomerForm } from "@/app/components/crm/forms/customer-form"
 import { Suspense } from "react"
@@ -17,8 +16,8 @@ export default async function CustomersPage({
 }) {
   const { slug } = await params
 
-  const organization = await getOrganization(slug)
-  const supabase = await createClient()
+  const { organization, supabase, canManageBusiness } =
+    await getWorkspaceAccess(slug)
 
   const { data: customers, error } = await supabase
     .from("customers")
@@ -92,7 +91,11 @@ export default async function CustomersPage({
           </div>
         </div>
 
-        <CustomerManager slug={slug} customers={customers ?? []} />
+        <CustomerManager
+          canManageDeletion={canManageBusiness}
+          slug={slug}
+          customers={customers ?? []}
+        />
       </section>
     </div>
   )

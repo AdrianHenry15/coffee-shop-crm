@@ -1,10 +1,9 @@
 import Link from "next/link"
-import { createClient } from "@/app/lib/supabase/server"
-import { getOrganization } from "@/lib/organizations"
 import { JobForm } from "@/app/components/crm/forms/job-form"
 import { formatOrganizationDateTime } from "@/app/lib/dates"
 import { Suspense } from "react"
 import { RedirectToast } from "@/app/components/crm/ui/redirect-toast"
+import { getWorkspaceAccess } from "@/app/lib/workspace-access"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -24,8 +23,8 @@ const jobMessages = {
 export default async function JobsPage({ params }: Props) {
   const { slug } = await params
 
-  const organization = await getOrganization(slug)
-  const supabase = await createClient()
+  const { organization, supabase, canManageBusiness } =
+    await getWorkspaceAccess(slug)
 
   const [customersResult, estimatesResult, jobsResult] = await Promise.all([
     supabase
@@ -165,7 +164,9 @@ export default async function JobsPage({ params }: Props) {
             </p>
 
             <p className="mt-2 text-sm text-muted">
-              Create your first job using the form below.
+              {canManageBusiness
+                ? "Create your first job using the form below."
+                : "Jobs will appear here when a workspace owner or admin creates them."}
             </p>
           </div>
         ) : (
@@ -204,39 +205,41 @@ export default async function JobsPage({ params }: Props) {
         )}
       </section>
 
-      <section className="rounded-xl border border-border bg-surface p-6">
-        <div className="mb-6">
-          <h2 className="font-mono text-lg font-semibold text-foreground">
-            Create job
-          </h2>
+      {canManageBusiness && (
+        <section className="rounded-xl border border-border bg-surface p-6">
+          <div className="mb-6">
+            <h2 className="font-mono text-lg font-semibold text-foreground">
+              Create job
+            </h2>
 
-          <p className="mt-1 text-sm text-muted">
-            Schedule new work for a customer or an accepted estimate.
-          </p>
-        </div>
-
-        {customers.length > 0 ? (
-          <JobForm
-            slug={slug}
-            timezone={organization.timezone}
-            customers={customers}
-            estimates={estimates}
-          />
-        ) : (
-          <div className="rounded-lg border border-dashed border-border bg-surface-secondary p-6">
-            <p className="text-sm text-muted">
-              Add a customer or restore one from Recently Deleted before
-              creating a job.
+            <p className="mt-1 text-sm text-muted">
+              Schedule new work for a customer or an accepted estimate.
             </p>
-
-            <Link
-              href={`/org/${slug}/customers`}
-              className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">
-              Go to customers →
-            </Link>
           </div>
-        )}
-      </section>
+
+          {customers.length > 0 ? (
+            <JobForm
+              slug={slug}
+              timezone={organization.timezone}
+              customers={customers}
+              estimates={estimates}
+            />
+          ) : (
+            <div className="rounded-lg border border-dashed border-border bg-surface-secondary p-6">
+              <p className="text-sm text-muted">
+                Add a customer or restore one from Recently Deleted before
+                creating a job.
+              </p>
+
+              <Link
+                href={`/org/${slug}/customers`}
+                className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">
+                Go to customers →
+              </Link>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="flex justify-end">
         <Link

@@ -21,6 +21,29 @@ export default async function JobDetailsPage({ params }: Props) {
   const organization = await getOrganization(slug)
   const supabase = await createClient()
 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    throw new Error("Authentication required.")
+  }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("organization_id", organization.id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle()
+
+  if (membershipError || !membership) {
+    throw new Error("Unable to verify workspace access.")
+  }
+
+  const canManage = ["owner", "admin"].includes(membership.role)
+
   const { data: job, error } = await supabase
     .from("jobs")
     .select(
@@ -170,6 +193,7 @@ export default async function JobDetailsPage({ params }: Props) {
         key={job.updated_at}
         slug={slug}
         timezone={organization.timezone}
+        canManage={canManage}
         job={{
           id: job.id,
           title: job.title,

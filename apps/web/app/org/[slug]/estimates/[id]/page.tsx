@@ -1,7 +1,5 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { getOrganization } from "@/lib/organizations"
-import { createClient } from "@/app/lib/supabase/server"
 import {
   EstimateManager,
   EstimateStatus,
@@ -9,6 +7,7 @@ import {
 import { EstimateItemEditor } from "@/app/components/crm/estimate-item-editor"
 import { Suspense } from "react"
 import { RedirectToast } from "@/app/components/crm/ui/redirect-toast"
+import { getWorkspaceAccess } from "@/app/lib/workspace-access"
 
 type Props = {
   params: Promise<{
@@ -30,8 +29,8 @@ const estimateMessages = {
 export default async function EstimateDetailsPage({ params }: Props) {
   const { slug, id } = await params
 
-  const organization = await getOrganization(slug)
-  const supabase = await createClient()
+  const { organization, supabase, canManageBusiness } =
+    await getWorkspaceAccess(slug)
 
   const { data: estimate, error } = await supabase
     .from("estimates")
@@ -202,7 +201,7 @@ export default async function EstimateDetailsPage({ params }: Props) {
         </div>
       </section>
 
-      {estimate.status === "draft" && (
+      {canManageBusiness && estimate.status === "draft" && (
         <EstimateItemEditor
           status={estimate.status}
           key={estimate.updated_at}
@@ -216,14 +215,31 @@ export default async function EstimateDetailsPage({ params }: Props) {
         />
       )}
 
-      <EstimateManager
-        slug={slug}
-        estimate={{
-          id: estimate.id,
-          status: estimate.status as EstimateStatus,
-          notes: estimate.notes,
-        }}
-      />
+      {canManageBusiness ? (
+        <EstimateManager
+          key={estimate.updated_at}
+          slug={slug}
+          estimate={{
+            id: estimate.id,
+            status: estimate.status as EstimateStatus,
+            notes: estimate.notes,
+          }}
+        />
+      ) : (
+        <section className="space-y-3 rounded-xl border border-border bg-surface p-6">
+          <h2 className="font-mono text-lg font-semibold text-foreground">
+            Notes
+          </h2>
+
+          <p className="whitespace-pre-wrap wrap-break-word text-sm text-muted">
+            {estimate.notes || "No additional notes."}
+          </p>
+
+          <p className="border-t border-border pt-3 text-xs text-muted">
+            Workspace owners and admins manage estimate details and status.
+          </p>
+        </section>
+      )}
     </div>
   )
 }

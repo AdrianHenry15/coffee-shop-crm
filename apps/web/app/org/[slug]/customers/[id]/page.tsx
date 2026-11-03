@@ -1,7 +1,6 @@
 import Link from "next/link"
-import { notFound, redirect } from "next/navigation"
-import { createClient } from "@/app/lib/supabase/server"
-import { getOrganization } from "@/lib/organizations"
+import { notFound } from "next/navigation"
+import { getWorkspaceAccess } from "@/app/lib/workspace-access"
 import { CustomerActivity } from "@/app/components/crm/customer-activity"
 
 type Props = {
@@ -14,15 +13,15 @@ type Props = {
 export default async function CustomerDetailsPage({ params }: Props) {
   const { slug, id } = await params
 
-  const organization = await getOrganization(slug)
-  const supabase = await createClient()
+  const { organization, supabase, canManageBusiness } =
+    await getWorkspaceAccess(slug)
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/login")
+    notFound()
   }
 
   const { data: customer, error } = await supabase
@@ -111,9 +110,9 @@ export default async function CustomerDetailsPage({ params }: Props) {
           </p>
 
           <p className="mt-2 text-sm text-muted">
-            Open Customers and select Recently Deleted to restore this customer
-            or permanently delete them. Customers with linked estimates or jobs
-            cannot be permanently deleted.
+            {canManageBusiness
+              ? "Open Customers and select Recently Deleted to restore this customer or permanently delete them. Customers with linked estimates or jobs cannot be permanently deleted."
+              : "Ask a workspace owner or admin to restore this customer. Your access to this archived record is read-only."}
           </p>
 
           <Link

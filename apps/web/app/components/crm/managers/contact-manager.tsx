@@ -29,6 +29,7 @@ type ContactManagerProps = {
   onTrash: BulkAction
   onRestore: BulkAction
   onPermanentDelete: BulkAction
+  canManageDeletion?: boolean
 }
 
 type Confirmation = {
@@ -68,6 +69,7 @@ export function ContactManager({
   onTrash,
   onRestore,
   onPermanentDelete,
+  canManageDeletion = false,
 }: ContactManagerProps) {
   const router = useRouter()
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -142,7 +144,7 @@ export function ContactManager({
   }
 
   function requestOperation(operation: Operation, ids: string[]) {
-    if (pending || ids.length === 0) return
+    if (!canManageDeletion || pending || ids.length === 0) return
 
     setActionError("")
     setConfirmation({ operation, ids: [...ids] })
@@ -156,7 +158,7 @@ export function ContactManager({
   }
 
   function confirmOperation() {
-    if (!confirmation || pending) return
+    if (!canManageDeletion || !confirmation || pending) return
 
     const { operation, ids } = confirmation
 
@@ -265,8 +267,9 @@ export function ContactManager({
           </p>
 
           <p className="mt-1 text-sm text-muted">
-            Restore them to use them again, or permanently delete them to free
-            up space.
+            {canManageDeletion
+              ? "Restore them to use them again, or permanently delete them to free up space."
+              : "These records are read-only. Ask a workspace owner or admin to restore or permanently delete them."}
           </p>
 
           {entity === "customers" && (
@@ -293,19 +296,21 @@ export function ContactManager({
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              disabled={pending || filtered.length === 0}
-              onChange={toggleAll}
-              className="size-4 accent-primary"
-            />
+          {canManageDeletion && (
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                disabled={pending || filtered.length === 0}
+                onChange={toggleAll}
+                className="size-4 accent-primary"
+              />
 
-            {filtered.length > MAX_SELECTION
-              ? `Select first ${MAX_SELECTION} results`
-              : "Select all results"}
-          </label>
+              {filtered.length > MAX_SELECTION
+                ? `Select first ${MAX_SELECTION} results`
+                : "Select all results"}
+            </label>
+          )}
 
           <p className="font-mono text-xs text-muted">
             Showing {filtered.length} of {currentContacts.length}
@@ -313,7 +318,7 @@ export function ContactManager({
           </p>
         </div>
 
-        {selected.length > 0 && (
+        {canManageDeletion && selected.length > 0 && (
           <div className="flex flex-wrap gap-2 border-t border-border pt-4">
             {isDeletedView ? (
               <>
@@ -384,16 +389,19 @@ export function ContactManager({
             return (
               <div key={contact.id} className="p-5">
                 <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    disabled={
-                      pending || (!checked && selected.length >= MAX_SELECTION)
-                    }
-                    onChange={() => toggleContact(contact.id)}
-                    aria-label={`Select ${contact.name}`}
-                    className="mt-1 size-4 shrink-0 accent-primary"
-                  />
+                  {canManageDeletion && (
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={
+                        pending ||
+                        (!checked && selected.length >= MAX_SELECTION)
+                      }
+                      onChange={() => toggleContact(contact.id)}
+                      aria-label={`Select ${contact.name}`}
+                      className="mt-1 size-4 shrink-0 accent-primary"
+                    />
+                  )}
 
                   <div className="min-w-0 flex-1">
                     {editing === contact.id && !isDeletedView ? (
@@ -533,27 +541,29 @@ export function ContactManager({
 
                         <div className="flex flex-wrap gap-2">
                           {isDeletedView ? (
-                            <>
-                              <button
-                                type="button"
-                                disabled={pending}
-                                onClick={() =>
-                                  requestOperation("restore", [contact.id])
-                                }
-                                className={secondaryButton}>
-                                Restore
-                              </button>
+                            canManageDeletion && (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={pending}
+                                  onClick={() =>
+                                    requestOperation("restore", [contact.id])
+                                  }
+                                  className={secondaryButton}>
+                                  Restore
+                                </button>
 
-                              <button
-                                type="button"
-                                disabled={pending}
-                                onClick={() =>
-                                  requestOperation("delete", [contact.id])
-                                }
-                                className={dangerButton}>
-                                Permanently delete
-                              </button>
-                            </>
+                                <button
+                                  type="button"
+                                  disabled={pending}
+                                  onClick={() =>
+                                    requestOperation("delete", [contact.id])
+                                  }
+                                  className={dangerButton}>
+                                  Permanently delete
+                                </button>
+                              </>
+                            )
                           ) : (
                             <>
                               {entity === "leads" &&

@@ -15,12 +15,18 @@ type Customer = ManagedContact & {
 type Props = {
   slug: string
   customers: Customer[]
+  canManageDeletion?: boolean
 }
 
-export function CustomerManager({ slug, customers }: Props) {
+export function CustomerManager({
+  slug,
+  customers,
+  canManageDeletion = false,
+}: Props) {
   return (
     <ContactManager
-      key={slug}
+      key={`${slug}:${canManageDeletion}`}
+      canManageDeletion={canManageDeletion}
       slug={slug}
       entity="customers"
       contacts={customers}

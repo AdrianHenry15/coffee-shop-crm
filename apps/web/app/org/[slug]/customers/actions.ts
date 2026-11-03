@@ -1,11 +1,11 @@
 "use server"
 
-import { changeContactDeletion } from "@/app/lib/crm/contact-deletion"
 import { ContactImportResult } from "@/app/lib/crm/csv-import"
 import { importContactCsv } from "@/app/lib/crm/import-contacts"
 import { createClient } from "@/app/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { changeManagedContactDeletion as changeContactDeletion } from "@/app/lib/crm/manage-contact-deletion"
 
 export type CreateCustomerState = {
   success: boolean
