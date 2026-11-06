@@ -42,6 +42,12 @@ select set_config(
   true
 );
 
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
+);
+
 select public.onboard_organization(
       'Security Tenant A',
       'security-tenant-a-015',
@@ -56,6 +62,12 @@ select set_config(
   'request.jwt.claim.sub',
   'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
   true
+);
+
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
 );
 
 select public.onboard_organization(
@@ -108,6 +120,12 @@ select set_config(
   'request.jwt.claim.sub',
   'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   true
+);
+
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
 );
 
 -- Test 1: Cannot read Tenant B customers.

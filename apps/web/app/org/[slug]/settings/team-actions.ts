@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/app/lib/supabase/server"
 import { getOrganization } from "@/lib/organizations"
+import { sendWorkspaceInvitationEmail } from "@/app/lib/email/workspace-invitation"
 
 type TeamCommand =
   | { operation: "invite"; email: string; role: string }
@@ -128,8 +129,16 @@ export async function manageWorkspaceTeam(
         return { error: "Unable to confirm the invitation was created." }
       }
 
-      message =
-        "Invitation created. Ask this person to sign in with that email and open the workspace selector. No email has been sent."
+      const emailSubmitted = await sendWorkspaceInvitationEmail({
+        invitationId: data,
+        workspaceName: organization.name,
+        email,
+        role: command.role === "admin" ? "admin" : "member",
+      })
+
+      message = emailSubmitted
+        ? "Invitation created and submitted for email delivery."
+        : "Invitation created, but email delivery could not be confirmed. Ask this person to sign in with the invited email and open the workspace selector."
       break
     }
 

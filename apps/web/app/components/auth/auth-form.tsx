@@ -185,6 +185,37 @@ export function AuthForm({ mode }: Props) {
             />
           </div>
         )}
+        {isSignup && (
+          <label className="flex items-start gap-3 text-sm leading-relaxed text-muted">
+            <input
+              type="checkbox"
+              name="acceptTerms"
+              value="yes"
+              required
+              className="mt-1 h-4 w-4 shrink-0 accent-primary"
+            />
+
+            <span>
+              I agree to the{" "}
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline">
+                Terms of Service
+              </Link>{" "}
+              and acknowledge the{" "}
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline">
+                Privacy Notice
+              </Link>
+              .
+            </span>
+          </label>
+        )}
       </fieldset>
 
       <AuthCaptcha

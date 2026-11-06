@@ -30,6 +30,23 @@ export async function acceptWorkspaceInvitation(
     return { error: "Sign in again before accepting this invitation." }
   }
 
+  const { data: accepted, error: acceptanceError } = await supabase.rpc(
+    "has_current_legal_acceptance",
+  )
+
+  if (acceptanceError) {
+    return {
+      error: "Unable to verify legal acceptance. Please try again.",
+    }
+  }
+
+  if (accepted !== true) {
+    return {
+      error:
+        "Open the dashboard to review and accept the Terms and Privacy Notice before accepting this invitation.",
+    }
+  }
+
   const { data: organizationId, error } = await supabase.rpc(
     "accept_organization_invitation",
     { p_invitation_id: invitationId },

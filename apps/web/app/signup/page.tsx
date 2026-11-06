@@ -26,9 +26,14 @@ export default async function SignupPage() {
             Create your account
           </h1>
 
-          <p className="text-sm text-muted">
-            Start with your personal details, then set up your business
-            workspace.
+          <p className="text-sm leading-relaxed text-muted">
+            Join CoffeeShopCRM early access. Start with your personal details,
+            then create your business workspace or accept a team invitation.
+          </p>
+
+          <p className="text-xs leading-relaxed text-muted">
+            Core business tools are available now. Additional integrations and
+            email notifications are in development.
           </p>
         </header>
 

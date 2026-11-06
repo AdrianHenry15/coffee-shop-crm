@@ -1,5 +1,6 @@
 import { createClient } from "@/app/lib/supabase/server"
 import { redirect, notFound } from "next/navigation"
+import { requireCurrentLegalAcceptance } from "@/app/lib/legal/access"
 
 export async function getOrganization(slug: string) {
   const supabase = await createClient()
@@ -9,6 +10,8 @@ export async function getOrganization(slug: string) {
   if (authError || !userData.user) {
     redirect("/login")
   }
+
+  await requireCurrentLegalAcceptance()
 
   const { data: organization, error } = await supabase
     .from("organizations")

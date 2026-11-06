@@ -41,6 +41,22 @@ BEGIN
     ARRAY[v_owner, v_recipient, v_unverified, v_outsider]
   ) AS fixture(id);
 
+  -- These verified test accounts have accepted the current documents.
+  INSERT INTO private.account_legal_acceptances (
+    user_id,
+    terms_version,
+    privacy_version,
+    source
+  )
+  SELECT
+    fixture.id,
+    '2026-11-03',
+    '2026-11-03',
+    'authenticated_acceptance'
+  FROM unnest(
+    ARRAY[v_owner, v_recipient, v_outsider]
+  ) AS fixture(id);
+
   INSERT INTO public.organizations (id, name, slug)
   VALUES
     (v_org, 'Invitation Test', 'invite-' || v_org::text),

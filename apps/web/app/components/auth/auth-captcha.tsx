@@ -4,7 +4,12 @@ import { useState } from "react"
 import { Turnstile } from "@marsidev/react-turnstile"
 
 type Props = {
-  action: "login" | "signup" | "password_reset" | "email_change"
+  action:
+    | "login"
+    | "signup"
+    | "password_reset"
+    | "email_change"
+    | "lead_capture"
 }
 
 export function AuthCaptcha({ action }: Props) {

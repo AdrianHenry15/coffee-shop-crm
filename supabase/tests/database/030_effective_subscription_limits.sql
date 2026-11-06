@@ -35,6 +35,12 @@ select set_config(
   true
 );
 
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
+);
+
 select public.onboard_organization(
       'Effective Limits Test',
       'effective-limits-test',

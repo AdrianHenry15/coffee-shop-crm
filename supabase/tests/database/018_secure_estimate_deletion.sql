@@ -47,6 +47,12 @@ select set_config(
   true
 );
 
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
+);
+
 select public.onboard_organization(
       'Deletion Test A',
       'deletion-test-a-018',
@@ -104,6 +110,12 @@ select set_config(
   'request.jwt.claim.sub',
   '19191919-1919-4919-8919-191919191919',
   true
+);
+
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
 );
 
 select public.onboard_organization(
@@ -206,6 +218,12 @@ select set_config(
   'request.jwt.claim.sub',
   '18181818-1818-4818-8818-181818181818',
   true
+);
+
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
 );
 
 -- Test 5: Finalized items cannot be directly deleted.

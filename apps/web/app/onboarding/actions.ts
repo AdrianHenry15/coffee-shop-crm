@@ -107,6 +107,20 @@ export async function createOrganization(
     return { error: "Confirm your account email before continuing." }
   }
 
+  const { data: accepted, error: acceptanceError } = await supabase.rpc(
+    "has_current_legal_acceptance",
+  )
+
+  if (acceptanceError) {
+    return {
+      error: "Unable to verify legal acceptance. Please try again.",
+    }
+  }
+
+  if (accepted !== true) {
+    return { redirectTo: "/legal/accept" }
+  }
+
   const { error } = await supabase.rpc("onboard_organization", {
     p_name: name,
     p_slug: slug,

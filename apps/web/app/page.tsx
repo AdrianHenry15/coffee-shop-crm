@@ -261,6 +261,15 @@ export default async function Home() {
         Skip to content
       </a>
 
+      <div className="border-b border-border bg-primary/10 px-4 py-3 text-center">
+        <p className="text-sm text-foreground">
+          <span className="font-semibold text-primary">Early access</span>
+          {" — "}
+          CoffeeShop is still growing. Start free and help shape what comes
+          next.
+        </p>
+      </div>
+
       <header className="border-b border-border">
         <nav
           aria-label="Main navigation"
@@ -302,7 +311,7 @@ export default async function Home() {
             <Link
               href="/signup"
               className="hidden items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 sm:inline-flex">
-              Start free
+              Join early access free
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
           </div>
@@ -334,7 +343,7 @@ export default async function Home() {
                 <Link
                   href="/signup"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
-                  Create your free workspace
+                  Join early access free
                   <ArrowRight aria-hidden="true" className="h-4 w-4" />
                 </Link>
 
@@ -344,6 +353,11 @@ export default async function Home() {
                   See how it works
                 </a>
               </div>
+
+              <p className="mt-4 text-xs leading-relaxed text-muted">
+                Core business tools are available now. Additional integrations
+                and email notifications are in development.
+              </p>
 
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
                 {[
@@ -584,9 +598,28 @@ export default async function Home() {
       </main>
 
       <footer className="border-t border-border px-6 py-8">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 text-sm text-muted sm:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 text-sm text-muted md:flex-row md:items-center">
           <span>© {new Date().getFullYear()} CoffeeShopCRM</span>
 
+          <nav aria-label="Legal" className="flex items-center gap-5">
+            <Link
+              href="/terms"
+              className="hover:text-foreground hover:underline">
+              Terms
+            </Link>
+
+            <Link
+              href="/privacy"
+              className="hover:text-foreground hover:underline">
+              Privacy
+            </Link>
+
+            <a
+              href="mailto:ahenry@thirdgenerationstudios.com"
+              className="hover:text-foreground hover:underline">
+              Contact
+            </a>
+          </nav>
           <span>
             Built by{" "}
             <a

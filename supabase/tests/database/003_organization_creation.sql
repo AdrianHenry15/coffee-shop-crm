@@ -38,6 +38,27 @@ where id in (
   '00000000-0000-4000-8000-000000000032'::uuid
 );
 
+-- These test accounts have accepted the current documents.
+insert into private.account_legal_acceptances (
+  user_id,
+  terms_version,
+  privacy_version,
+  source
+)
+values
+(
+  '00000000-0000-4000-8000-000000000031',
+  '2026-11-03',
+  '2026-11-03',
+  'authenticated_acceptance'
+),
+(
+  '00000000-0000-4000-8000-000000000032',
+  '2026-11-03',
+  '2026-11-03',
+  'authenticated_acceptance'
+);
+
 insert into public.organizations (id, name, slug)
 values (
   '10000000-0000-4000-8000-000000000032',

@@ -38,6 +38,27 @@ where id in (
   'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid
 );
 
+-- These fixtures have accepted the current legal documents.
+insert into private.account_legal_acceptances (
+  user_id,
+  terms_version,
+  privacy_version,
+  source
+)
+values
+(
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  '2026-11-03',
+  '2026-11-03',
+  'authenticated_acceptance'
+),
+(
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  '2026-11-03',
+  '2026-11-03',
+  'authenticated_acceptance'
+);
+
 -- Authenticate as owner.
 set local role authenticated;
 

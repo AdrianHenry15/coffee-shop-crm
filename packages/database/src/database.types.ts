@@ -373,14 +373,14 @@ isOneToOne: false
                   ]
                 },"leads": {
                   Row: {
-                    "created_at": string,"deleted_at": string | null,"email": string | null,"id": string,"name": string,"notes": string | null,"organization_id": string,"phone": string | null,"status": string,"updated_at": string
+                    "created_at": string,"deleted_at": string | null,"email": string | null,"id": string,"name": string,"notes": string | null,"organization_id": string,"phone": string | null,"source": string,"source_form_id": string | null,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deleted_at"?: string | null,"email"?: string | null,"id"?: string,"name": string,"notes"?: string | null,"organization_id": string,"phone"?: string | null,"status"?: string,"updated_at"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"email"?: string | null,"id"?: string,"name": string,"notes"?: string | null,"organization_id": string,"phone"?: string | null,"source"?: string,"source_form_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"deleted_at"?: string | null,"email"?: string | null,"id"?: string,"name"?: string,"notes"?: string | null,"organization_id"?: string,"phone"?: string | null,"status"?: string,"updated_at"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"email"?: string | null,"id"?: string,"name"?: string,"notes"?: string | null,"organization_id"?: string,"phone"?: string | null,"source"?: string,"source_form_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -389,6 +389,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "organizations"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "leads_source_form_workspace_fkey"
+      columns: ["source_form_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "organization_lead_forms"
+      referencedColumns: ["id","organization_id"]
     }
                   ]
                 },"organization_benefits": {
@@ -405,6 +411,26 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "organization_benefits_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: true
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"organization_lead_forms": {
+                  Row: {
+                    "created_at": string,"enabled": boolean,"id": string,"organization_id": string,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"enabled"?: boolean,"id"?: string,"organization_id": string,"title"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"enabled"?: boolean,"id"?: string,"organization_id"?: string,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "organization_lead_forms_organization_id_fkey"
       columns: ["organization_id"]
 isOneToOne: true
       referencedRelation: "organizations"
@@ -571,7 +597,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "accept_organization_invitation":
+            "accept_current_legal_documents":
+{ Args: { "p_privacy_version": string,"p_terms_version": string }; Returns: undefined
+                           },
+"accept_organization_invitation":
 { Args: { "p_invitation_id": string }; Returns: string
                            },
 "associate_stripe_customer":
@@ -591,10 +620,16 @@ isOneToOne: false
 "complete_stripe_subscription_upgrade":
 { Args: { "p_change_id": string,"p_customer_id": string,"p_invoice_id": string,"p_price_id": string,"p_subscription_id": string }; Returns: undefined
                            },
+"configure_organization_lead_form":
+{ Args: { "p_enabled": boolean,"p_organization_id": string,"p_title": string }; Returns: string
+                           },
 "consume_catalog_website_request":
 { Args: { "p_api_key_hash": string }; Returns: {
               "allowed": boolean,"organization_id": string,"retry_after": number
             }[]
+                           },
+"consume_public_lead_attempt":
+{ Args: { "p_form_id": string,"p_visitor_hash": string }; Returns: boolean
                            },
 "convert_lead_to_customer":
 { Args: { "lead_uuid": string }; Returns: string
@@ -634,11 +669,19 @@ isOneToOne: false
               "benefit_level": string,"organization_created_at": string,"organization_id": string,"organization_name": string,"organization_slug": string,"plan_id": string,"plan_name": string,"subscription_status": string,"total_count": number
             }[]
                            },
+"get_public_lead_form":
+{ Args: { "p_form_id": string }; Returns: {
+              "form_id": string,"title": string,"workspace_name": string
+            }[]
+                           },
 "grant_organization_partner":
 { Args: { "org_uuid": string }; Returns: undefined
                            },
 "grant_platform_administrator":
 { Args: { "p_email": string }; Returns: string
+                           },
+"has_current_legal_acceptance":
+{ Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "list_my_organization_invitations":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -681,6 +724,9 @@ isOneToOne: false
                            },
 "set_organization_maintenance":
 { Args: { "ends_at": string,"org_uuid": string,"starts_at": string }; Returns: undefined
+                           },
+"submit_public_lead":
+{ Args: { "p_email": string,"p_form_id": string,"p_message": string,"p_name": string,"p_phone": string,"p_submission_id": string }; Returns: undefined
                            },
 "sync_stripe_subscription":
 { Args: { "p_customer_id": string,"p_plan_id": string,"p_price_id": string,"p_status": string,"p_subscription_id": string }; Returns: undefined

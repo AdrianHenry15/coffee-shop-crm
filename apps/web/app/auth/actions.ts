@@ -70,6 +70,13 @@ export async function login(formData: FormData): Promise<AuthActionResult> {
 }
 
 export async function signup(formData: FormData): Promise<AuthActionResult> {
+  if (readText(formData, "acceptTerms") !== "yes") {
+    return {
+      error:
+        "Agree to the Terms and acknowledge the Privacy Notice to continue.",
+    }
+  }
+
   const firstName = readText(formData, "firstName").trim()
   const lastName = readText(formData, "lastName").trim()
   const email = readText(formData, "email").trim()
@@ -133,6 +140,9 @@ export async function signup(formData: FormData): Promise<AuthActionResult> {
         first_name: firstName,
         last_name: lastName,
         contact_phone: phone,
+        legal_accepted: true,
+        terms_version: "2026-11-03",
+        privacy_version: "2026-11-03",
       },
     },
   })

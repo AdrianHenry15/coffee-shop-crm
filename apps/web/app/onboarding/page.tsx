@@ -4,6 +4,7 @@ import { logout } from "@/app/auth/actions"
 import { createClient } from "@/app/lib/supabase/server"
 import { OnboardingForm } from "./onboarding-form"
 import { WorkspaceInvitations } from "@/app/components/crm/workspace-invitations"
+import { requireCurrentLegalAcceptance } from "@/app/lib/legal/access"
 
 export default async function OnboardingPage() {
   const supabase = await createClient()
@@ -13,6 +14,7 @@ export default async function OnboardingPage() {
   if (authError || !authData.user) {
     redirect("/login")
   }
+  await requireCurrentLegalAcceptance()
 
   const { data: memberships, error: membershipError } = await supabase
     .from("organization_members")

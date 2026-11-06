@@ -69,8 +69,9 @@ export function OrganizationInvitations({
         </p>
 
         <p className="text-sm text-muted">
-          Email notifications are not enabled yet. Ask the recipient to sign in
-          with the invited email and open the workspace selector.
+          Recipients receive an email with instructions to sign in or create an
+          account using the invited email. They review and accept the invitation
+          after signing in.
         </p>
       </div>
 
@@ -110,7 +111,7 @@ export function OrganizationInvitations({
           type="submit"
           disabled={pending}
           className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
-          {pending ? "Updating..." : "Create invitation"}
+          {pending ? "Updating..." : "Send invitation"}
         </button>
       </form>
 

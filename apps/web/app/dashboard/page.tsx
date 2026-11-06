@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { logout } from "@/app/auth/actions"
 import { createClient } from "@/app/lib/supabase/server"
 import { WorkspaceInvitations } from "@/app/components/crm/workspace-invitations"
+import { requireCurrentLegalAcceptance } from "@/app/lib/legal/access"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -12,6 +13,7 @@ export default async function DashboardPage() {
   if (authError || !userData.user) {
     redirect("/login")
   }
+  await requireCurrentLegalAcceptance()
 
   const { data: memberships, error } = await supabase
     .from("organization_members")

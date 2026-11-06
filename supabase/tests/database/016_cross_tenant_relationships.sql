@@ -50,6 +50,12 @@ select set_config(
   true
 );
 
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
+);
+
 select public.onboard_organization(
       'Relationship Tenant A',
       'relationship-tenant-a-016',
@@ -64,6 +70,12 @@ select set_config(
   'request.jwt.claim.sub',
   'ffffffff-ffff-4fff-8fff-ffffffffffff',
   true
+);
+
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
 );
 
 select public.onboard_organization(
@@ -128,6 +140,12 @@ select set_config(
   'request.jwt.claim.sub',
   'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
   true
+);
+
+-- This fixture user accepts the current documents before onboarding.
+select public.accept_current_legal_documents(
+  '2026-11-03',
+  '2026-11-03'
 );
 
 -- Test 2: Cannot create an estimate with another tenant's customer.
